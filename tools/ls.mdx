@@ -1,0 +1,429 @@
+---
+title: LS Tool
+description: List directory contents in a tree structure for exploring project organization
+---
+
+## Overview
+
+The LS tool displays directory contents in a hierarchical tree structure, making it easy to understand project organization and file layout. It's ideal for exploring unfamiliar codebases and verifying directory structure.
+
+## Parameters
+
+<ParamField path="path" type="string">
+  The directory path to list. Defaults to the current working directory.
+</ParamField>
+
+<ParamField path="ignore" type="string[]">
+  List of glob patterns to ignore. Files and directories matching these patterns are excluded from the output.
+</ParamField>
+
+<ParamField path="depth" type="number">
+  Maximum depth to traverse. Limits how many levels deep the tree goes. Defaults to unlimited (or config setting).
+</ParamField>
+
+## Features
+
+### Tree Structure
+
+Output is displayed as an indented tree:
+
+```
+- /path/to/project/
+  - src/
+    - main.go
+    - handler.go
+    - utils/
+      - helpers.go
+      - config.go
+  - tests/
+    - main_test.go
+  - go.mod
+  - README.md
+```
+
+Directories are marked with trailing slashes.
+
+### Automatic Filtering
+
+LS automatically skips:
+- Hidden files and directories (starting with `.`)
+- Common system directories (`__pycache__`, `node_modules`, etc.)
+- Files matching .gitignore patterns
+- Files matching .crushignore patterns
+
+### Depth Control
+
+Limit traversal depth to avoid overwhelming output:
+
+```json
+{
+  "path": "/path/to/project",
+  "depth": 2
+}
+```
+
+This shows only 2 levels of nesting.
+
+### Result Limits
+
+- **Maximum files:** 1000 files per listing
+- **Truncation notice:** Shown if limit exceeded
+- **Depth warning:** Shown when depth limit is reached
+
+## Output Format
+
+### Standard Output
+
+```
+- /path/to/project/
+  - src/
+    - main.go
+    - server.go
+  - README.md
+```
+
+### Truncated Output
+
+```
+There are more than 1000 files in the directory. Use a more specific path or use the Glob tool to find specific files. The first 1000 files and directories are included below.
+
+- /path/to/project/
+  - src/
+    ...
+```
+
+### Depth Limited Output
+
+```
+The directory tree is shown up to a depth of 3. Use a higher depth and a specific path to see more levels.
+
+- /path/to/project/
+  - src/
+    - components/
+      - (3 levels shown)
+```
+
+## Usage Examples
+
+### List Current Directory
+
+```json
+{
+  "path": "."
+}
+```
+
+or simply:
+
+```json
+{}
+```
+
+### List Specific Directory
+
+```json
+{
+  "path": "/path/to/project/src"
+}
+```
+
+### Limit Depth
+
+```json
+{
+  "path": "/path/to/project",
+  "depth": 2
+}
+```
+
+### Ignore Patterns
+
+```json
+{
+  "path": "/path/to/project",
+  "ignore": ["*.log", "tmp/*", "**/_test.go"]
+}
+```
+
+### Large Project Exploration
+
+```json
+{
+  "path": "/path/to/large-project/src",
+  "depth": 3,
+  "ignore": ["node_modules", "dist", "build"]
+}
+```
+
+## Best Practices
+
+### When to Use LS
+
+1. **Initial exploration** - Understanding project structure
+2. **Before editing** - Verifying file locations
+3. **After changes** - Checking new files were created
+4. **Navigation** - Finding your way in unfamiliar code
+
+### Effective Usage
+
+1. **Start at project root** - Get overall structure first
+2. **Use depth limits** - Prevent overwhelming output
+3. **Explore incrementally** - Go deeper into specific areas
+4. **Combine with Glob** - LS for structure, Glob for specific files
+
+### Managing Large Directories
+
+1. **Use specific paths** - List subdirectories instead of root
+2. **Set depth limits** - Show only relevant levels
+3. **Use ignore patterns** - Skip irrelevant directories
+4. **Use Glob instead** - For finding specific file patterns
+
+## Common Patterns
+
+### Project Exploration
+
+```json
+// Top-level overview
+{"path": ".", "depth": 1}
+
+// Source code structure  
+{"path": "./src", "depth": 2}
+
+// Test structure
+{"path": "./tests"}
+```
+
+### Verify File Creation
+
+```json
+// After creating files
+{"path": "./generated", "depth": 1}
+
+// Check specific directory
+{"path": "./src/components"}
+```
+
+### Exclude Common Directories
+
+```json
+{
+  "path": ".",
+  "ignore": [
+    "node_modules",
+    "dist",
+    "build",
+    ".git",
+    "vendor"
+  ]
+}
+```
+
+## Permissions
+
+### Auto-Approved
+
+- Listing directories within the working directory
+
+### Requires Permission
+
+- Listing directories outside the working directory
+
+You can pre-approve LS for specific paths:
+
+```json
+{
+  "allow": {
+    "ls": ["~/projects", "/etc/nginx"]
+  }
+}
+```
+
+## Cross-Platform Notes
+
+### Path Separators
+
+Results use forward slashes `/` on all platforms:
+- Windows: `C:/Users/name/project/`
+- Unix: `/home/user/project/`
+
+### Hidden Files
+
+**Unix/Linux/macOS:**
+- Files starting with `.` are hidden
+- Automatically skipped by LS
+
+**Windows:**
+- Files with hidden attribute are not automatically skipped
+- Files starting with `.` are skipped for consistency
+
+### Case Sensitivity
+
+- **Unix/Linux/macOS** - Case-sensitive file system
+- **Windows** - Case-insensitive file system
+
+LS preserves the case as stored on the file system.
+
+## Troubleshooting
+
+### Directory Not Found
+
+- Check path is correct
+- Use absolute paths to avoid ambiguity
+- Verify directory exists
+- Check permissions
+
+### Too Many Files
+
+- Use more specific path
+- Increase depth limit if set too low
+- Use ignore patterns to exclude directories
+- Use Glob tool instead for specific patterns
+
+### Empty Output
+
+- Check if directory is empty
+- Verify files aren't all hidden
+- Check ignore patterns aren't too broad
+- Check .gitignore and .crushignore
+
+### Performance Issues
+
+- Use depth limits
+- Specify narrower paths
+- Exclude large directories with ignore
+- Use Glob for targeted searches
+
+## LS vs Other Tools
+
+### LS vs Glob
+
+**Use LS when:**
+- Understanding directory structure
+- Seeing file organization
+- Exploring unfamiliar projects
+- Hierarchical view needed
+
+**Use Glob when:**
+- Finding files by pattern
+- Searching specific file types
+- Working with specific extensions
+- Targeting specific files
+
+### LS vs Bash ls
+
+**Use LS tool:**
+- Tree view of directory structure
+- Recursive listing with depth control
+- Respects .gitignore automatically
+- Cross-platform consistent output
+- Integrated into Crush workflow
+
+**Use Bash ls:**
+- Detailed file information (sizes, permissions)
+- Sorting options
+- Custom formatting
+- Scripting with other commands
+
+### LS vs View
+
+**Use LS when:**
+- Exploring directory structure
+- Finding file locations
+- Understanding project layout
+- Multiple files at once
+
+**Use View when:**
+- Reading file contents
+- Understanding code
+- Checking file details
+- Getting LSP diagnostics
+
+## Common Workflows
+
+### Project Exploration
+
+1. **LS root directory** with depth=2
+2. **Identify key directories** (src, tests, etc.)
+3. **LS each directory** for detailed structure
+4. **Use Glob** to find specific file types
+5. **Use View** to read relevant files
+
+### Verification After Changes
+
+1. **Make changes** with Edit or Write
+2. **LS the affected directory** to verify structure
+3. **Use Glob** to find the new files
+4. **Use View** to check file contents
+
+### Navigation
+
+1. **LS current location** to see available paths
+2. **Identify target directory** from tree
+3. **LS target directory** for details
+4. **Use View** to read files of interest
+
+## Configuration
+
+LS behavior can be configured in `crush.json`:
+
+```json
+{
+  "tools": {
+    "ls": {
+      "max_depth": 3,
+      "max_files": 1000
+    }
+  }
+}
+```
+
+### Configuration Options
+
+- `max_depth` - Default maximum depth for traversal
+- `max_files` - Maximum files to return (default 1000)
+
+## Advanced Usage
+
+### Combining with Other Tools
+
+```json
+// Explore structure
+{"tool": "ls", "path": "./src", "depth": 2}
+
+// Find specific files
+{"tool": "glob", "pattern": "src/**/*.go"}
+
+// Search contents
+{"tool": "grep", "pattern": "func.*Handler", "path": "src"}
+```
+
+### Incremental Exploration
+
+```json
+// Step 1: Top level
+{"path": ".", "depth": 1}
+
+// Step 2: Source directory
+{"path": "./src", "depth": 2}
+
+// Step 3: Specific subdirectory
+{"path": "./src/handlers"}
+```
+
+### Filtering Large Projects
+
+```json
+{
+  "path": ".",
+  "depth": 3,
+  "ignore": [
+    "node_modules",
+    "vendor",
+    ".git",
+    "dist",
+    "build",
+    "coverage",
+    "*.log"
+  ]
+}
+```

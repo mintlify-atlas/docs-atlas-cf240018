@@ -1,97 +1,152 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Glamorous Agentic Coding for All"
+description: "Your new coding bestie, now available in your favorite terminal. Your tools, your code, and your workflows, wired into your LLM of choice."
 ---
 
-## Setting up
+<div style={{
+  background: 'linear-gradient(135deg, #6a4dff 0%, #ff7bff 100%)',
+  padding: '4rem 2rem',
+  borderRadius: '12px',
+  marginBottom: '3rem',
+  textAlign: 'center'
+}}>
+  <h1 style={{
+    fontSize: '3rem',
+    fontWeight: 700,
+    color: '#ffffff',
+    marginBottom: '1.5rem',
+    fontFamily: 'Inter'
+  }}>
+    Welcome to Crush
+  </h1>
+  <p style={{
+    fontSize: '1.25rem',
+    color: '#ffffff',
+    marginBottom: '2rem',
+    maxWidth: '800px',
+    margin: '0 auto 2rem'
+  }}>
+    A terminal-based AI coding assistant that connects to LLMs and gives them tools to read, write, and execute code
+  </p>
+</div>
 
-Get your documentation site up and running in minutes.
+## Why Crush?
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Crush is your AI-powered coding companion that lives right in your terminal. Built by [Charm](https://charm.land), it combines the power of modern LLMs with a beautiful terminal interface and deep code intelligence.
 
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Multi-Model Support" icon="brain" href="/configuration/providers">
+    Choose from Anthropic, OpenAI, Gemini, Bedrock, and many more
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Session-Based" icon="clock-rotate-left" href="/guides/sessions">
+    Maintain multiple work sessions and contexts per project
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="LSP-Enhanced" icon="code" href="/configuration/lsp">
+    Crush uses Language Server Protocols for additional context
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Extensible" icon="puzzle-piece" href="/configuration/mcp">
+    Add capabilities via MCP servers and Agent Skills
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Get Started in Minutes
 
-Everything you need to create world-class documentation.
+<Steps>
+  <Step title="Install Crush">
+    Get Crush installed on your system using your preferred package manager
+    
+    <CodeGroup>
+    ```bash Homebrew
+    brew install charmbracelet/tap/crush
+    ```
+    
+    ```bash npm
+    npm install -g @charmland/crush
+    ```
+    
+    ```bash Go
+    go install github.com/charmbracelet/crush@latest
+    ```
+    </CodeGroup>
+    
+    [View all installation methods →](/installation)
+  </Step>
+  
+  <Step title="Configure Your Provider">
+    Set up your API key for your preferred LLM provider
+    
+    ```bash
+    export ANTHROPIC_API_KEY=your-key-here
+    # or OPENAI_API_KEY, GEMINI_API_KEY, etc.
+    ```
+    
+    Crush will prompt you for your API key on first run if not set.
+    
+    [Learn about providers →](/configuration/providers)
+  </Step>
+  
+  <Step title="Start Coding">
+    Launch Crush and start your AI-assisted coding session
+    
+    ```bash
+    crush
+    ```
+    
+    [See quickstart guide →](/quickstart)
+  </Step>
+</Steps>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Key Features
 
-## Need inspiration?
+<CardGroup cols={3}>
+  <Card title="Cross-Platform" icon="laptop">
+    Works everywhere: macOS, Linux, Windows, Android, FreeBSD, OpenBSD, and NetBSD
+  </Card>
+  <Card title="Flexible Model Switching" icon="shuffle">
+    Switch LLMs mid-session while preserving context
+  </Card>
+  <Card title="Industrial Grade" icon="shield-check">
+    Built on the Charm ecosystem, powering 25k+ applications
+  </Card>
+</CardGroup>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+## Popular Use Cases
+
+<AccordionGroup>
+  <Accordion title="Code Review and Refactoring">
+    Use Crush to analyze your codebase, suggest improvements, and refactor code with LSP-powered intelligence
+  </Accordion>
+  
+  <Accordion title="Bug Fixing and Debugging">
+    Leverage Crush's understanding of your project structure to identify and fix bugs faster
+  </Accordion>
+  
+  <Accordion title="Feature Development">
+    Build new features with AI assistance that understands your codebase, coding style, and project conventions
+  </Accordion>
+  
+  <Accordion title="Documentation Generation">
+    Generate comprehensive documentation that's tailored to your code and project structure
+  </Accordion>
+</AccordionGroup>
+
+## Ready to Get Started?
+
+<CardGroup cols={2}>
+  <Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+    Get up and running with Crush in under 5 minutes
+  </Card>
+  <Card title="Configuration Guide" icon="gear" href="/configuration/overview">
+    Customize Crush to fit your workflow
+  </Card>
+  <Card title="CLI Reference" icon="terminal" href="/cli/crush">
+    Explore all available commands and options
+  </Card>
+  <Card title="Tools Reference" icon="wrench" href="/tools/overview">
+    Learn about Crush's built-in tools
+  </Card>
+</CardGroup>
+
+<Note>
+  Productivity may increase when using Crush and you may find yourself nerd sniped when first using the application. If the symptoms persist, join the [Discord](https://charm.land/discord) and nerd snipe the rest of us.
+</Note>

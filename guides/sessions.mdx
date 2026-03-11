@@ -1,0 +1,119 @@
+---
+title: "Sessions"
+description: "Manage multiple conversation contexts in your projects"
+---
+
+## What Are Sessions?
+
+Sessions in Crush are independent conversation contexts that allow you to maintain multiple separate workflows within a single project. Each session has its own:
+
+- **Conversation history**: Messages and responses are stored separately
+- **Context preservation**: The LLM remembers previous interactions within the session
+- **Token tracking**: Usage and cost metrics are tracked per session
+- **File tracking**: Files modified during the session are tracked
+
+## Why Use Sessions?
+
+Sessions are useful when you want to:
+
+- Work on multiple features or bugs simultaneously without mixing context
+- Experiment with different approaches to a problem
+- Keep documentation work separate from implementation
+- Maintain clean, focused conversation histories
+
+## Session Persistence
+
+All sessions are stored in a SQLite database located at `./.crush/crush.db` relative to your project. This means:
+
+- Sessions persist across Crush restarts
+- You can return to any previous session and continue where you left off
+- All conversation history, token usage, and metadata are preserved
+- Multiple sessions can exist per project simultaneously
+
+## Creating Sessions
+
+When you start Crush for the first time in a project, a default session is created automatically. To create additional sessions:
+
+1. **In the TUI**: Use the session management interface to create a new session
+2. **Keyboard shortcut**: Press the appropriate key combination to open the session picker
+3. **Command prompt**: Request Crush to create a new session for a specific task
+
+Each session is assigned a unique ID and can be given a descriptive title that updates automatically based on your conversation.
+
+## Switching Between Sessions
+
+You can switch between existing sessions at any time:
+
+- Open the session picker in the TUI
+- Select the session you want to switch to
+- Your conversation history and context will load immediately
+
+Switching sessions is instant and preserves all state in both the current and target sessions.
+
+## Managing Sessions
+
+### Session Titles
+
+Sessions automatically generate descriptive titles based on your conversation. The title is created by analyzing your prompts and Crush's responses to provide a meaningful summary.
+
+### Session Metrics
+
+Each session tracks:
+
+- **Message count**: Total number of messages exchanged
+- **Token usage**: Prompt tokens and completion tokens consumed
+- **Cost**: Estimated cost based on the model's pricing
+- **Files modified**: List of files that were created or edited
+
+### Deleting Sessions
+
+When you delete a session:
+
+- The session record is removed from the database
+- All messages in the session are deleted
+- File tracking data is removed
+- The action cannot be undone
+
+<Warning>
+  Deleting a session permanently removes all conversation history and cannot be recovered.
+</Warning>
+
+## Session Data Location
+
+Session data is stored in your project's `.crush` directory:
+
+```
+.crush/
+├── crush.db          # SQLite database with all sessions
+└── logs/
+    └── crush.log     # Log file (includes session activity)
+```
+
+## Multiple Sessions Per Project
+
+You can have as many sessions as you need in a project. Common patterns include:
+
+- **Feature sessions**: One session per feature branch
+- **Bug sessions**: Separate sessions for each bug investigation
+- **Refactoring sessions**: Dedicated sessions for code improvements
+- **Documentation sessions**: Sessions focused on writing or updating docs
+
+## Context Preservation
+
+Each session maintains its own conversation context, which means:
+
+- The LLM remembers previous messages only within the current session
+- Switching sessions switches the entire conversation history
+- Context from one session doesn't leak into another
+- You can work on completely different topics in different sessions
+
+## Best Practices
+
+<Tip>
+  Create a new session when starting work on a distinct feature or bug to keep conversations focused and relevant.
+</Tip>
+
+- **Name sessions clearly**: While titles auto-generate, starting with a clear initial prompt helps
+- **Clean up old sessions**: Delete sessions you no longer need to keep your workspace organized
+- **Use sessions for experiments**: Try different approaches in separate sessions
+- **Review session metrics**: Check token usage and costs to understand your LLM consumption

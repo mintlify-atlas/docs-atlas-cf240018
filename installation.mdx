@@ -1,0 +1,198 @@
+---
+title: "Installation"
+description: "Install Crush on your system using your preferred package manager"
+---
+
+## System requirements
+
+Crush works on all major operating systems with first-class support for:
+
+- macOS (Intel and Apple Silicon)
+- Linux (all major distributions)
+- Windows (PowerShell and WSL)
+- FreeBSD, OpenBSD, NetBSD
+- Android (via Termux)
+
+No specific system requirements beyond a working terminal and network connectivity (unless running in air-gapped mode).
+
+## Package managers
+
+Choose your preferred package manager to install Crush:
+
+<CodeGroup>
+
+```bash Homebrew (macOS/Linux)
+brew install charmbracelet/tap/crush
+```
+
+```bash npm
+npm install -g @charmland/crush
+```
+
+```bash Arch Linux
+yay -S crush-bin
+```
+
+```bash Nix
+nix run github:numtide/nix-ai-tools#crush
+```
+
+```bash FreeBSD
+pkg install crush
+```
+
+</CodeGroup>
+
+### Windows installation
+
+Windows users can install Crush using either Winget or Scoop:
+
+<CodeGroup>
+
+```powershell Winget
+winget install charmbracelet.crush
+```
+
+```powershell Scoop
+scoop bucket add charm https://github.com/charmbracelet/scoop-bucket.git
+scoop install crush
+```
+
+</CodeGroup>
+
+### Linux distribution packages
+
+<Tabs>
+  <Tab title="Debian/Ubuntu">
+    ```bash
+    sudo mkdir -p /etc/apt/keyrings
+    curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
+    sudo apt update && sudo apt install crush
+    ```
+  </Tab>
+  
+  <Tab title="Fedora/RHEL">
+    ```bash
+    echo '[charm]
+    name=Charm
+    baseurl=https://repo.charm.sh/yum/
+    enabled=1
+    gpgcheck=1
+    gpgkey=https://repo.charm.sh/yum/gpg.key' | sudo tee /etc/yum.repos.d/charm.repo
+    sudo yum install crush
+    ```
+  </Tab>
+</Tabs>
+
+## Nix advanced usage
+
+Crush is available via the official Charm [NUR](https://github.com/nix-community/NUR) in `nur.repos.charmbracelet.crush`, which is the most up-to-date way to get Crush in Nix.
+
+### Try with nix-shell
+
+```bash
+# Add the NUR channel
+nix-channel --add https://github.com/nix-community/NUR/archive/main.tar.gz nur
+nix-channel --update
+
+# Get Crush in a Nix shell
+nix-shell -p '(import <nur> { pkgs = import <nixpkgs> {}; }).repos.charmbracelet.crush'
+```
+
+### NixOS & Home Manager modules
+
+Crush provides NixOS and Home Manager modules via NUR. The module auto-detects whether it's in a Home Manager or NixOS context:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nur.url = "github:nix-community/NUR";
+  };
+
+  outputs = { self, nixpkgs, nur, ... }: {
+    nixosConfigurations.your-hostname = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        nur.modules.nixos.default
+        nur.repos.charmbracelet.modules.crush
+        {
+          programs.crush = {
+            enable = true;
+            settings = {
+              providers = {
+                openai = {
+                  id = "openai";
+                  name = "OpenAI";
+                  base_url = "https://api.openai.com/v1";
+                  type = "openai";
+                  api_key = "sk-fake123456789abcdef...";
+                  models = [
+                    {
+                      id = "gpt-4";
+                      name = "GPT-4";
+                    }
+                  ];
+                };
+              };
+              lsp = {
+                go = { command = "gopls"; enabled = true; };
+                nix = { command = "nil"; enabled = true; };
+              };
+              options = {
+                context_paths = [ "/etc/nixos/configuration.nix" ];
+                tui = { compact_mode = true; };
+                debug = false;
+              };
+            };
+          };
+        }
+      ];
+    };
+  };
+}
+```
+
+## Download binaries
+
+Pre-built binaries are available for direct download:
+
+- **Packages**: Available in [Debian and RPM formats](https://github.com/charmbracelet/crush/releases)
+- **Binaries**: Available for [Linux, macOS, Windows, FreeBSD, OpenBSD, and NetBSD](https://github.com/charmbracelet/crush/releases)
+
+Download the appropriate binary for your platform from the [releases page](https://github.com/charmbracelet/crush/releases).
+
+## Install from source
+
+If you have Go installed, you can build Crush from source:
+
+```bash
+go install github.com/charmbracelet/crush@latest
+```
+
+<Note>
+  Installing from source requires Go 1.24 or later.
+</Note>
+
+## Verify installation
+
+After installation, verify that Crush is available:
+
+```bash
+crush --version
+```
+
+You should see output showing the installed version:
+
+```
+crush version 1.x.x
+```
+
+## Next steps
+
+Now that Crush is installed, you're ready to set up your first coding session:
+
+<Card title="Quick Start" icon="rocket" href="/quickstart">
+  Complete your first AI-assisted coding session in under 5 minutes
+</Card>

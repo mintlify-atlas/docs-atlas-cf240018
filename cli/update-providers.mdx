@@ -1,0 +1,502 @@
+---
+title: crush update-providers
+description: Update provider information from remote or local sources
+---
+
+The `crush update-providers` command updates AI provider information (models, capabilities, pricing) from remote URLs, local files, or embedded data.
+
+## Usage
+
+```bash
+crush update-providers [path-or-url] [flags]
+```
+
+## Description
+
+Update provider information from a specified source. This command refreshes:
+
+- **Model lists**: Available models per provider
+- **Model metadata**: Context windows, capabilities, features
+- **Pricing information**: Input/output token costs
+- **Provider configurations**: API endpoints, requirements
+
+Two provider sources can be updated:
+
+- **Catwalk**: The main provider catalog (default)
+- **Hyper**: Charm's Hyper service provider information
+
+## Arguments
+
+<ParamField path="path-or-url" type="string" optional>
+  Optional path to a local file or URL to fetch provider data from.
+  
+  - **Omitted**: Fetches from the default remote source
+  - **URL**: Downloads from the specified URL (must be `http://` or `https://`)
+  - **File path**: Reads from a local file
+  - **`embedded`**: Resets to the embedded/bundled version
+</ParamField>
+
+## Flags
+
+<ParamField path="--source" type="string" default="catwalk">
+  Provider source to update. Must be one of:
+  
+  - `catwalk` - Main provider catalog (default)
+  - `hyper` - Hyper service provider information
+</ParamField>
+
+## Global Flags
+
+All [global flags](/cli/crush#global-flags) are available: `--cwd`, `--data-dir`, `--debug`
+
+## Examples
+
+<CodeGroup>
+```bash Update from default remote
+# Update Catwalk providers from default remote URL
+crush update-providers
+```
+
+```bash Update from custom URL
+# Update from a custom remote URL
+crush update-providers https://example.com/providers.json
+```
+
+```bash Update from local file
+# Update from a local JSON file
+crush update-providers /path/to/local-providers.json
+```
+
+```bash Reset to embedded
+# Reset to the embedded/bundled version
+crush update-providers embedded
+```
+
+```bash Update Hyper
+# Update Hyper provider information
+crush update-providers --source=hyper
+```
+
+```bash Update Hyper from custom URL
+# Update Hyper from a custom URL
+crush update-providers --source=hyper https://hyper.example.com/providers.json
+```
+</CodeGroup>
+
+## Update Sources
+
+### Catwalk (Default)
+
+The Catwalk provider catalog includes:
+
+- **Anthropic**: Claude models
+- **OpenAI**: GPT and O1 models
+- **Google**: Gemini models
+- **AWS Bedrock**: Bedrock-hosted models
+- **GitHub Copilot**: Copilot models
+- **Vercel**: Vercel AI models
+- **MiniMax**: MiniMax models
+- And more...
+
+### Hyper
+
+Charm's Hyper service provides:
+
+- Managed AI access
+- Multiple model backends
+- Simplified authentication
+- Unified API interface
+
+## Update Behavior
+
+### Remote Updates (Default)
+
+When no path is specified:
+
+```bash
+crush update-providers
+```
+
+1. Fetches from the default remote URL
+2. Downloads the latest provider data
+3. Updates cached provider information
+4. Validates the data structure
+5. Saves to Crush's cache directory
+
+### Custom URL Updates
+
+When a URL is provided:
+
+```bash
+crush update-providers https://example.com/providers.json
+```
+
+1. Downloads from the specified URL
+2. Same validation and caching as default
+3. Useful for:
+   - Corporate proxies
+   - Air-gapped environments
+   - Custom provider catalogs
+   - Testing new provider definitions
+
+### Local File Updates
+
+When a file path is provided:
+
+```bash
+crush update-providers /path/to/providers.json
+```
+
+1. Reads from the local filesystem
+2. No network access required
+3. Useful for:
+   - Offline development
+   - Custom provider configurations
+   - Testing provider changes
+   - Air-gapped deployments
+
+### Embedded Reset
+
+When `embedded` is specified:
+
+```bash
+crush update-providers embedded
+```
+
+1. Resets to the built-in provider data
+2. Removes cached updates
+3. Returns to the version bundled with Crush
+4. Useful for:
+   - Rolling back bad updates
+   - Troubleshooting
+   - Returning to known-good state
+
+## Success Output
+
+On successful update:
+
+```
+┌───────────┐
+│  SUCCESS  │
+└───────────┘
+catwalk provider updated successfully.
+```
+
+Or for Hyper:
+
+```
+┌───────────┐
+│  SUCCESS  │
+└───────────┘
+hyper provider updated successfully.
+```
+
+## Error Messages
+
+### Invalid Source
+
+```
+invalid source "xyz", must be 'catwalk' or 'hyper'
+```
+
+**Cause**: The `--source` flag has an invalid value.
+
+**Solution**: Use either `catwalk` or `hyper`:
+
+```bash
+crush update-providers --source=catwalk
+crush update-providers --source=hyper
+```
+
+### Network Errors
+
+```
+failed to fetch providers: <network error>
+```
+
+**Causes**:
+
+- No internet connection
+- Remote server is down
+- Invalid URL
+- SSL/TLS errors
+
+**Solutions**:
+
+```bash
+# Check internet connectivity
+ping google.com
+
+# Use a local file instead
+crush update-providers /path/to/providers.json
+
+# Reset to embedded version
+crush update-providers embedded
+```
+
+### File Not Found
+
+```
+failed to read file: <file error>
+```
+
+**Cause**: Local file path doesn't exist.
+
+**Solution**:
+
+```bash
+# Check file exists
+ls -l /path/to/providers.json
+
+# Use absolute path
+crush update-providers /absolute/path/to/providers.json
+```
+
+### Invalid JSON
+
+```
+failed to parse provider data: <parse error>
+```
+
+**Cause**: Provider data is not valid JSON or has incorrect structure.
+
+**Solution**:
+
+```bash
+# Validate JSON
+jq . < providers.json
+
+# Reset to embedded version
+crush update-providers embedded
+```
+
+## Provider Data Format
+
+Provider JSON files have this structure:
+
+```json
+{
+  "providers": {
+    "anthropic": {
+      "name": "Anthropic",
+      "models": [
+        {
+          "id": "claude-sonnet-4-20250514",
+          "name": "Claude Sonnet 4",
+          "context_window": 200000,
+          "input_cost_per_token": 0.000003,
+          "output_cost_per_token": 0.000015
+        }
+      ]
+    }
+  }
+}
+```
+
+## Update Frequency
+
+How often to update providers:
+
+### Recommended Schedule
+
+- **Weekly**: For active development
+- **Monthly**: For stable usage
+- **As needed**: When new models are announced
+- **After Crush updates**: After upgrading Crush itself
+
+### When to Update
+
+Update providers when:
+
+- New models are released
+- Pricing changes
+- You see "model not found" errors
+- After upgrading Crush
+- Before starting new projects
+
+## Use Cases
+
+### Regular Maintenance
+
+Keep provider data fresh:
+
+```bash
+# Weekly update
+crush update-providers
+```
+
+### Air-Gapped Environments
+
+Work without internet:
+
+```bash
+# On connected machine: download provider data
+curl -o providers.json https://catwalk.charm.sh/providers.json
+
+# Transfer to air-gapped machine
+scp providers.json server:/tmp/
+
+# On air-gapped machine: update from local file
+crush update-providers /tmp/providers.json
+```
+
+### Corporate Proxies
+
+Use internal provider mirrors:
+
+```bash
+# Update from internal mirror
+crush update-providers https://internal-mirror.corp/crush-providers.json
+```
+
+### Custom Providers
+
+Add your own provider definitions:
+
+```bash
+# Create custom provider file
+cat > my-providers.json <<'EOF'
+{
+  "providers": {
+    "my-custom-llm": {
+      "name": "My Custom LLM",
+      "models": [
+        {
+          "id": "my-model-v1",
+          "name": "My Model v1",
+          "context_window": 100000
+        }
+      ]
+    }
+  }
+}
+EOF
+
+# Update from custom file
+crush update-providers my-providers.json
+```
+
+### Testing Provider Changes
+
+Test new provider definitions:
+
+```bash
+# Save current state
+crush update-providers embedded
+
+# Test new providers
+crush update-providers test-providers.json
+crush models  # Verify models appear
+
+# Rollback if needed
+crush update-providers embedded
+```
+
+### Troubleshooting Model Issues
+
+Reset to known-good state:
+
+```bash
+# If models aren't working correctly
+crush update-providers embedded
+
+# Then try updating again
+crush update-providers
+```
+
+## Caching
+
+Provider data is cached in:
+
+```
+~/.crush/cache/providers/
+├── catwalk.json    # Catwalk provider data
+└── hyper.json      # Hyper provider data
+```
+
+### Cache Management
+
+```bash
+# View cached data
+cat ~/.crush/cache/providers/catwalk.json | jq .
+
+# Clear cache (forces re-download)
+rm -rf ~/.crush/cache/providers/
+
+# Update will recreate cache
+crush update-providers
+```
+
+## Automation
+
+### Scheduled Updates
+
+Automate provider updates:
+
+```bash
+# Add to crontab (weekly on Sundays at 2 AM)
+0 2 * * 0 /usr/local/bin/crush update-providers
+```
+
+### CI/CD Integration
+
+```yaml
+# .github/workflows/update-providers.yml
+name: Update Providers
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sundays
+workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update providers
+        run: crush update-providers
+```
+
+### Pre-commit Hook
+
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit
+
+# Update providers before commits
+crush update-providers --source=catwalk
+crush update-providers --source=hyper
+```
+
+## Security Considerations
+
+### Trusted Sources
+
+Only update from trusted sources:
+
+- Official Crush/Charm URLs (default)
+- Your organization's internal mirrors
+- Verified third-party sources
+
+### HTTPS Requirement
+
+When using URLs:
+
+- Prefer HTTPS over HTTP
+- Verify SSL certificates
+- Use corporate CAs if needed
+
+### Data Validation
+
+Crush validates provider data:
+
+- JSON structure validation
+- Required fields verification
+- Type checking
+- Schema validation
+
+## See Also
+
+- [`crush models`](/cli/models) - View updated models
+- [Providers](/configuration/providers) - Provider documentation
+- [Configuration](/configuration/overview) - Provider configuration
+- [Custom Providers](/advanced/custom-providers) - Creating custom provider definitions

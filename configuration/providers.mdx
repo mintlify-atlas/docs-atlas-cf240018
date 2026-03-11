@@ -1,0 +1,288 @@
+---
+title: Provider Configuration
+description: Configure LLM providers and models in Crush
+---
+
+Crush supports multiple LLM providers including Anthropic, OpenAI, Google Gemini, AWS Bedrock, Azure, and many more. You can configure providers using environment variables or configuration files.
+
+## Quick Start with Environment Variables
+
+The quickest way to get started is to set an API key for your preferred provider. Crush recognizes these environment variables:
+
+| Environment Variable        | Provider                                           |
+| --------------------------- | -------------------------------------------------- |
+| `ANTHROPIC_API_KEY`         | Anthropic                                          |
+| `OPENAI_API_KEY`            | OpenAI                                             |
+| `VERCEL_API_KEY`            | Vercel AI Gateway                                  |
+| `GEMINI_API_KEY`            | Google Gemini                                      |
+| `SYNTHETIC_API_KEY`         | Synthetic                                          |
+| `ZAI_API_KEY`               | Z.ai                                               |
+| `MINIMAX_API_KEY`           | MiniMax                                            |
+| `HF_TOKEN`                  | Hugging Face Inference                             |
+| `CEREBRAS_API_KEY`          | Cerebras                                           |
+| `OPENROUTER_API_KEY`        | OpenRouter                                         |
+| `IONET_API_KEY`             | io.net                                             |
+| `GROQ_API_KEY`              | Groq                                               |
+| `VERTEXAI_PROJECT`          | Google Cloud VertexAI (Gemini)                     |
+| `VERTEXAI_LOCATION`         | Google Cloud VertexAI (Gemini)                     |
+| `AWS_ACCESS_KEY_ID`         | Amazon Bedrock (Claude)                            |
+| `AWS_SECRET_ACCESS_KEY`     | Amazon Bedrock (Claude)                            |
+| `AWS_REGION`                | Amazon Bedrock (Claude)                            |
+| `AWS_PROFILE`               | Amazon Bedrock (Custom Profile)                    |
+| `AWS_BEARER_TOKEN_BEDROCK`  | Amazon Bedrock                                     |
+| `AZURE_OPENAI_API_ENDPOINT` | Azure OpenAI models                                |
+| `AZURE_OPENAI_API_KEY`      | Azure OpenAI models (optional when using Entra ID) |
+| `AZURE_OPENAI_API_VERSION`  | Azure OpenAI models                                |
+
+<Tip>
+Just set an environment variable and run Crush. If no API key is found, Crush will prompt you to enter one.
+</Tip>
+
+## Custom Provider Configuration
+
+For advanced scenarios, you can configure custom providers in your `crush.json` file.
+
+### OpenAI-Compatible Providers
+
+<Note>
+Crush supports two OpenAI provider types:
+- `openai` - For proxying/routing requests through OpenAI
+- `openai-compat` - For non-OpenAI providers with OpenAI-compatible APIs
+</Note>
+
+Here's an example configuration for Deepseek:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "providers": {
+    "deepseek": {
+      "type": "openai-compat",
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key": "$DEEPSEEK_API_KEY",
+      "models": [
+        {
+          "id": "deepseek-chat",
+          "name": "Deepseek V3",
+          "cost_per_1m_in": 0.27,
+          "cost_per_1m_out": 1.1,
+          "cost_per_1m_in_cached": 0.07,
+          "cost_per_1m_out_cached": 1.1,
+          "context_window": 64000,
+          "default_max_tokens": 5000
+        }
+      ]
+    }
+  }
+}
+```
+
+### Anthropic-Compatible Providers
+
+For providers that use the Anthropic API format:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "providers": {
+    "custom-anthropic": {
+      "type": "anthropic",
+      "base_url": "https://api.anthropic.com/v1",
+      "api_key": "$ANTHROPIC_API_KEY",
+      "extra_headers": {
+        "anthropic-version": "2023-06-01"
+      },
+      "models": [
+        {
+          "id": "claude-sonnet-4-20250514",
+          "name": "Claude Sonnet 4",
+          "cost_per_1m_in": 3,
+          "cost_per_1m_out": 15,
+          "cost_per_1m_in_cached": 3.75,
+          "cost_per_1m_out_cached": 0.3,
+          "context_window": 200000,
+          "default_max_tokens": 50000,
+          "can_reason": true,
+          "supports_attachments": true
+        }
+      ]
+    }
+  }
+}
+```
+
+## Local Models
+
+You can run Crush with local models using OpenAI-compatible servers.
+
+### Ollama
+
+```json
+{
+  "providers": {
+    "ollama": {
+      "name": "Ollama",
+      "base_url": "http://localhost:11434/v1/",
+      "type": "openai-compat",
+      "models": [
+        {
+          "name": "Qwen 3 30B",
+          "id": "qwen3:30b",
+          "context_window": 256000,
+          "default_max_tokens": 20000
+        }
+      ]
+    }
+  }
+}
+```
+
+### LM Studio
+
+```json
+{
+  "providers": {
+    "lmstudio": {
+      "name": "LM Studio",
+      "base_url": "http://localhost:1234/v1/",
+      "type": "openai-compat",
+      "models": [
+        {
+          "name": "Qwen 3 30B",
+          "id": "qwen/qwen3-30b-a3b-2507",
+          "context_window": 256000,
+          "default_max_tokens": 20000
+        }
+      ]
+    }
+  }
+}
+```
+
+## Cloud Providers
+
+### Amazon Bedrock
+
+Crush supports running Anthropic models through Bedrock (caching disabled):
+
+1. Configure AWS credentials: `aws configure`
+2. Set `AWS_REGION` or `AWS_DEFAULT_REGION` environment variable
+3. (Optional) Use a specific profile: `AWS_PROFILE=myprofile crush`
+4. Alternative: Set `AWS_BEARER_TOKEN_BEDROCK` instead of running `aws configure`
+
+### Vertex AI Platform
+
+Vertex AI appears when `VERTEXAI_PROJECT` and `VERTEXAI_LOCATION` are set:
+
+```bash
+gcloud auth application-default login
+```
+
+Configure specific models:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "providers": {
+    "vertexai": {
+      "models": [
+        {
+          "id": "claude-sonnet-4@20250514",
+          "name": "VertexAI Sonnet 4",
+          "cost_per_1m_in": 3,
+          "cost_per_1m_out": 15,
+          "cost_per_1m_in_cached": 3.75,
+          "cost_per_1m_out_cached": 0.3,
+          "context_window": 200000,
+          "default_max_tokens": 50000,
+          "can_reason": true,
+          "supports_attachments": true
+        }
+      ]
+    }
+  }
+}
+```
+
+## Model Configuration Options
+
+When defining models in your provider configuration, you can specify:
+
+- **id** (required) - Model identifier used by the provider API
+- **name** (required) - Human-readable model name
+- **cost_per_1m_in** - Cost per 1M input tokens
+- **cost_per_1m_out** - Cost per 1M output tokens
+- **cost_per_1m_in_cached** - Cost per 1M cached input tokens
+- **cost_per_1m_out_cached** - Cost per 1M cached output tokens
+- **context_window** - Maximum context window size
+- **default_max_tokens** - Default maximum tokens for responses
+- **can_reason** - Whether the model supports extended reasoning
+- **supports_attachments** - Whether the model supports file attachments
+
+## Provider Auto-Updates
+
+By default, Crush automatically updates the provider database from [Catwalk](https://github.com/charmbracelet/catwalk), the open source Crush provider database.
+
+### Disabling Auto-Updates
+
+For air-gapped or restricted environments:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "options": {
+    "disable_provider_auto_update": true
+  }
+}
+```
+
+Or use the environment variable:
+
+```bash
+export CRUSH_DISABLE_PROVIDER_AUTO_UPDATE=1
+```
+
+### Manual Updates
+
+Update providers manually:
+
+```bash
+# Update from Catwalk
+crush update-providers
+
+# Update from custom URL
+crush update-providers https://example.com/
+
+# Update from local file
+crush update-providers /path/to/local-providers.json
+
+# Reset to embedded version
+crush update-providers embedded
+```
+
+## Environment Variable Expansion
+
+In configuration files, you can reference environment variables using the `$VARIABLE_NAME` syntax:
+
+```json
+{
+  "providers": {
+    "openai": {
+      "api_key": "$OPENAI_API_KEY"
+    }
+  }
+}
+```
+
+Crush automatically expands these variables when loading the configuration.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Model Selection" icon="robot" href="/cli/models">
+    Learn how to list and select models
+  </Card>
+  <Card title="Permissions" icon="shield" href="/configuration/permissions">
+    Configure tool permissions
+  </Card>
+</CardGroup>

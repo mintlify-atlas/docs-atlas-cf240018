@@ -1,0 +1,316 @@
+---
+title: Skills Configuration
+description: Configure Agent Skills to extend Crush's capabilities
+---
+
+Crush supports the [Agent Skills](https://agentskills.io) open standard for extending agent capabilities with reusable skill packages. Skills are folders containing a `SKILL.md` file with instructions that Crush can discover and activate on demand.
+
+## What are Agent Skills?
+
+Agent Skills provide:
+
+- **Reusable capabilities** - Package domain knowledge and workflows
+- **On-demand activation** - Skills are loaded when needed
+- **Standardized format** - Works across compatible agent systems
+- **Portable knowledge** - Share skills across projects and teams
+
+## Skill Discovery Locations
+
+Crush automatically discovers skills from these directories:
+
+**Unix/Linux/macOS:**
+- `~/.config/crush/skills/` (default)
+- `~/.config/agents/skills/` (alternative)
+
+**Windows:**
+- `%LOCALAPPDATA%\crush\skills\` (default)
+- `%LOCALAPPDATA%\agents\skills\` (alternative)
+
+<Info>
+The default skills directory can be overridden with the `CRUSH_SKILLS_DIR` environment variable.
+</Info>
+
+## Environment Variable Override
+
+Set `CRUSH_SKILLS_DIR` to customize the skills directory:
+
+```bash
+# Unix/Linux/macOS
+export CRUSH_SKILLS_DIR="/custom/path/to/skills"
+
+# Windows (PowerShell)
+$env:CRUSH_SKILLS_DIR = "C:\custom\path\to\skills"
+```
+
+## Configuration
+
+Add additional skills paths in your `crush.json`:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "options": {
+    "skills_paths": [
+      "~/.config/crush/skills",
+      "./project-skills",
+      "./docs/skills"
+    ]
+  }
+}
+```
+
+**Windows example:**
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "options": {
+    "skills_paths": [
+      "%LOCALAPPDATA%\\crush\\skills",
+      ".\\project-skills"
+    ]
+  }
+}
+```
+
+<Note>
+Skills paths can be absolute or relative. Relative paths are resolved from the project root.
+</Note>
+
+## Installing Example Skills
+
+Get started with example skills from [anthropics/skills](https://github.com/anthropics/skills):
+
+<CodeGroup>
+```bash Unix/Linux/macOS
+# Create skills directory
+mkdir -p ~/.config/crush/skills
+cd ~/.config/crush/skills
+
+# Clone and install skills
+git clone https://github.com/anthropics/skills.git _temp
+mv _temp/skills/* .
+rm -rf _temp
+```
+
+```powershell Windows (PowerShell)
+# Create skills directory
+mkdir -Force "$env:LOCALAPPDATA\crush\skills"
+cd "$env:LOCALAPPDATA\crush\skills"
+
+# Clone and install skills
+git clone https://github.com/anthropics/skills.git _temp
+mv _temp/skills/* .
+rm -r -force _temp
+```
+</CodeGroup>
+
+## Skill Structure
+
+Each skill is a directory containing a `SKILL.md` file:
+
+```
+~/.config/crush/skills/
+├── web-research/
+│   └── SKILL.md
+├── code-review/
+│   └── SKILL.md
+└── documentation/
+    ├── SKILL.md
+    ├── templates/
+    └── examples/
+```
+
+The `SKILL.md` file contains:
+- Skill name and description
+- Instructions for the agent
+- Example usage
+- Any supporting context
+
+## Creating Custom Skills
+
+Create a custom skill by adding a directory with a `SKILL.md` file:
+
+```bash
+# Create skill directory
+mkdir -p ~/.config/crush/skills/my-custom-skill
+
+# Create SKILL.md
+cat > ~/.config/crush/skills/my-custom-skill/SKILL.md << 'EOF'
+# My Custom Skill
+
+This skill helps with [describe purpose].
+
+## Instructions
+
+When this skill is activated:
+
+1. [Step-by-step instructions]
+2. [What the agent should do]
+3. [Expected outcomes]
+
+## Examples
+
+[Provide examples of how to use this skill]
+EOF
+```
+
+### Skill Template
+
+Here's a template for creating skills:
+
+````markdown
+# [Skill Name]
+
+[Brief description of what this skill does]
+
+## Purpose
+
+[Detailed explanation of the skill's purpose and when to use it]
+
+## Instructions
+
+When activated, this skill provides the following capabilities:
+
+1. **[Capability 1]**: [Description]
+2. **[Capability 2]**: [Description]
+3. **[Capability 3]**: [Description]
+
+## Workflow
+
+[Step-by-step process the agent should follow]
+
+## Examples
+
+### Example 1: [Use Case]
+
+```
+[Example input/output or scenario]
+```
+
+### Example 2: [Use Case]
+
+```
+[Example input/output or scenario]
+```
+
+## Best Practices
+
+- [Practice 1]
+- [Practice 2]
+- [Practice 3]
+
+## Resources
+
+[Links to additional documentation or references]
+````
+
+## Project-Specific Skills
+
+You can create project-specific skills in your project directory:
+
+```bash
+# Create project skills directory
+mkdir -p ./skills/deployment
+
+# Add project-specific deployment skill
+cat > ./skills/deployment/SKILL.md << 'EOF'
+# Deployment Skill
+
+This skill handles deployment workflows for this project.
+
+## Instructions
+
+1. Build the project with `npm run build`
+2. Run tests with `npm test`
+3. Deploy to staging with `./scripts/deploy-staging.sh`
+4. Deploy to production with `./scripts/deploy-prod.sh`
+EOF
+```
+
+Then reference it in your configuration:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "options": {
+    "skills_paths": [
+      "~/.config/crush/skills",
+      "./skills"
+    ]
+  }
+}
+```
+
+## Using Skills
+
+Crush automatically discovers and loads skills from configured paths. You can reference skills in your conversations:
+
+```
+> Use the code-review skill to review this pull request
+```
+
+or
+
+```
+> Activate the deployment skill and deploy to staging
+```
+
+<Tip>
+Skills are loaded on-demand, so there's no performance penalty for having many skills configured.
+</Tip>
+
+## Organizing Skills
+
+Organize skills by category or purpose:
+
+```
+~/.config/crush/skills/
+├── development/
+│   ├── code-review/
+│   ├── testing/
+│   └── refactoring/
+├── documentation/
+│   ├── api-docs/
+│   ├── readme/
+│   └── changelog/
+├── devops/
+│   ├── deployment/
+│   ├── monitoring/
+│   └── ci-cd/
+└── research/
+    ├── web-research/
+    └── documentation-research/
+```
+
+## Sharing Skills
+
+Skills are portable - you can share them with your team:
+
+1. **Git repository**: Store skills in a Git repo
+2. **Package manager**: Distribute as npm/pip packages
+3. **Direct sharing**: Copy skill directories between projects
+
+## Security Considerations
+
+Skills can contain arbitrary instructions for the agent. Review skills before adding them:
+
+- Only use skills from trusted sources
+- Review `SKILL.md` contents before activation
+- Be cautious with skills that execute commands
+- Use project-specific skill paths for sensitive workflows
+
+<Warning>
+Skills have access to the same tools and permissions as Crush. Only install skills you trust.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Permissions" icon="shield" href="/configuration/permissions">
+    Configure tool permissions
+  </Card>
+  <Card title="Agent Skills Standard" icon="book-open" href="https://agentskills.io" iconType="solid">
+    Learn more about the Agent Skills standard
+  </Card>
+</CardGroup>

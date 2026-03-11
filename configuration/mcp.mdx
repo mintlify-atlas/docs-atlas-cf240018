@@ -1,0 +1,426 @@
+---
+title: MCP Configuration
+description: Configure Model Context Protocol servers in Crush
+---
+
+Crush supports the [Model Context Protocol](https://modelcontextprotocol.io) (MCP), which allows you to extend Crush's capabilities with custom tools, resources, and prompts provided by external servers.
+
+MCP servers can provide:
+
+- **Tools** - Additional commands Crush can execute
+- **Resources** - External data sources Crush can read
+- **Prompts** - Reusable prompt templates
+
+## Transport Types
+
+Crush supports three MCP transport types:
+
+- **stdio** - Command-line servers that communicate over stdin/stdout
+- **http** - HTTP endpoints that implement the MCP protocol
+- **sse** - Server-Sent Events for streaming MCP responses
+
+## Configuration
+
+Configure MCP servers in your `crush.json` file:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "mcp": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/path/to/mcp-server.js"],
+      "timeout": 120,
+      "disabled": false,
+      "disabled_tools": ["some-tool-name"],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "timeout": 120,
+      "disabled": false,
+      "disabled_tools": ["create_issue", "create_pull_request"],
+      "headers": {
+        "Authorization": "Bearer $GH_PAT"
+      }
+    },
+    "streaming-service": {
+      "type": "sse",
+      "url": "https://example.com/mcp/sse",
+      "timeout": 120,
+      "disabled": false,
+      "headers": {
+        "API-Key": "$(echo $API_KEY)"
+      }
+    }
+  }
+}
+```
+
+## Configuration Options
+
+### type
+
+**Type:** `string` (required)  
+**Values:** `stdio`, `http`, `sse`  
+**Default:** `stdio`
+
+The transport type for the MCP server.
+
+```json
+{
+  "mcp": {
+    "my-server": {
+      "type": "stdio"
+    }
+  }
+}
+```
+
+### stdio Transport Options
+
+For `stdio` servers:
+
+#### command
+
+**Type:** `string`
+
+The executable command for the MCP server.
+
+```json
+{
+  "mcp": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "node"
+    }
+  }
+}
+```
+
+#### args
+
+**Type:** `string[]`
+
+Command-line arguments to pass to the MCP server.
+
+```json
+{
+  "mcp": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/path/to/mcp-server.js", "--verbose"]
+    }
+  }
+}
+```
+
+#### env
+
+**Type:** `object`
+
+Environment variables to set for the MCP server process.
+
+```json
+{
+  "mcp": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/path/to/mcp-server.js"],
+      "env": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}
+```
+
+### http and sse Transport Options
+
+For `http` and `sse` servers:
+
+#### url
+
+**Type:** `string` (required for http/sse)
+
+The URL endpoint for the MCP server.
+
+```json
+{
+  "mcp": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    }
+  }
+}
+```
+
+#### headers
+
+**Type:** `object`
+
+HTTP headers to send with requests.
+
+```json
+{
+  "mcp": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer $GH_PAT",
+        "Content-Type": "application/json"
+      }
+    }
+  }
+}
+```
+
+### Common Options
+
+These options apply to all transport types:
+
+#### disabled
+
+**Type:** `boolean`  
+**Default:** `false`
+
+Disable this MCP server without removing its configuration.
+
+```json
+{
+  "mcp": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/path/to/mcp-server.js"],
+      "disabled": true
+    }
+  }
+}
+```
+
+#### disabled_tools
+
+**Type:** `string[]`
+
+List of specific tools from this MCP server to disable.
+
+```json
+{
+  "mcp": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "disabled_tools": [
+        "create_issue",
+        "create_pull_request",
+        "delete_repository"
+      ]
+    }
+  }
+}
+```
+
+<Warning>
+Use `disabled_tools` to prevent Crush from accessing dangerous or unwanted tools while still using the MCP server's other capabilities.
+</Warning>
+
+#### timeout
+
+**Type:** `integer`  
+**Default:** `15`
+
+Timeout in seconds for MCP server connections.
+
+```json
+{
+  "mcp": {
+    "slow-server": {
+      "type": "http",
+      "url": "https://example.com/mcp",
+      "timeout": 120
+    }
+  }
+}
+```
+
+## Environment Variable Expansion
+
+MCP configurations support environment variable expansion using `$VAR` or `$(echo $VAR)` syntax:
+
+```json
+{
+  "mcp": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer $GH_PAT"
+      }
+    },
+    "custom-service": {
+      "type": "sse",
+      "url": "https://example.com/mcp/sse",
+      "headers": {
+        "API-Key": "$(echo $API_KEY)"
+      }
+    }
+  }
+}
+```
+
+## Example Configurations
+
+### stdio: Node.js MCP Server
+
+```json
+{
+  "mcp": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/Users/me/.config/mcp/filesystem-server.js"],
+      "env": {
+        "NODE_ENV": "production",
+        "ALLOWED_PATHS": "/home,/tmp"
+      }
+    }
+  }
+}
+```
+
+### stdio: Python MCP Server
+
+```json
+{
+  "mcp": {
+    "database": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "mcp_server.database"],
+      "env": {
+        "DB_CONNECTION": "$DATABASE_URL"
+      },
+      "timeout": 30
+    }
+  }
+}
+```
+
+### http: REST API MCP Server
+
+```json
+{
+  "mcp": {
+    "api-gateway": {
+      "type": "http",
+      "url": "https://api.example.com/mcp/v1",
+      "headers": {
+        "Authorization": "Bearer $API_TOKEN",
+        "X-API-Version": "2024-01"
+      },
+      "timeout": 60
+    }
+  }
+}
+```
+
+### sse: Streaming MCP Server
+
+```json
+{
+  "mcp": {
+    "realtime-data": {
+      "type": "sse",
+      "url": "https://stream.example.com/mcp",
+      "headers": {
+        "Authorization": "$(echo $STREAM_TOKEN)"
+      },
+      "timeout": 300
+    }
+  }
+}
+```
+
+## Disabling Specific Tools
+
+You can disable specific tools while keeping the MCP server active:
+
+```json
+{
+  "mcp": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer $GH_PAT"
+      },
+      "disabled_tools": [
+        "delete_repository",
+        "force_push",
+        "delete_branch"
+      ]
+    }
+  }
+}
+```
+
+<Tip>
+Use `disabled_tools` to implement least-privilege access - only enable the tools you actually need.
+</Tip>
+
+## MCP Resources
+
+MCP servers can provide resources that Crush can read. Use the built-in MCP resource tools:
+
+- `list_mcp_resources` - List available resources from MCP servers
+- `read_mcp_resource` - Read a specific MCP resource
+
+These tools are automatically available when MCP servers are configured.
+
+## Debugging MCP Issues
+
+Enable debug logging to troubleshoot MCP server issues:
+
+```json
+{
+  "options": {
+    "debug": true
+  }
+}
+```
+
+Or use the command-line flag:
+
+```bash
+crush --debug
+```
+
+Logs are written to `./.crush/logs/crush.log` in your project directory.
+
+## Finding MCP Servers
+
+Explore available MCP servers:
+
+- [MCP Servers Directory](https://github.com/modelcontextprotocol/servers) - Official MCP server implementations
+- [Awesome MCP](https://github.com/punkpeye/awesome-mcp-servers) - Community curated list of MCP servers
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Skills" icon="book" href="/configuration/skills">
+    Configure Agent Skills for reusable capabilities
+  </Card>
+  <Card title="Permissions" icon="shield" href="/configuration/permissions">
+    Control tool and MCP permissions
+  </Card>
+</CardGroup>

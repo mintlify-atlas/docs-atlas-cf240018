@@ -1,80 +1,279 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: "Quick Start"
+description: "Get up and running with Crush in under 5 minutes"
 ---
 
-## Get started in three steps
+This guide will walk you through your first Crush session, from installation to your first AI-assisted code changes.
 
-Get your documentation site running locally and make your first customization.
+## Before you begin
 
-### Step 1: Set up your local environment
+You'll need an API key from at least one LLM provider. Crush supports many providers, including:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+- [Anthropic](https://console.anthropic.com/) (Claude models)
+- [OpenAI](https://platform.openai.com/) (GPT models)
+- [Google AI Studio](https://aistudio.google.com/) (Gemini models)
+- [Groq](https://groq.com/) (Fast inference)
+- [OpenRouter](https://openrouter.ai/) (Access to multiple models)
+
+For this quickstart, we recommend starting with Anthropic or OpenAI.
+
+## Get started in four steps
+
+<Steps>
+  <Step title="Install Crush">
+    Install Crush using your preferred package manager:
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    <CodeGroup>
+    ```bash Homebrew
+    brew install charmbracelet/tap/crush
+    ```
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    ```bash npm
+    npm install -g @charmland/crush
+    ```
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```bash Go
+    go install github.com/charmbracelet/crush@latest
+    ```
+    </CodeGroup>
+    
+    <Tip>
+      See the [installation guide](/installation) for all installation methods including Windows, Arch Linux, Nix, and more.
+    </Tip>
+  </Step>
+  
+  <Step title="Set up your API key">
+    Configure your API key using an environment variable. The quickest way is to export it in your shell:
+    
+    <CodeGroup>
+    ```bash Anthropic
+    export ANTHROPIC_API_KEY=your-key-here
+    ```
+    
+    ```bash OpenAI
+    export OPENAI_API_KEY=your-key-here
+    ```
+    
+    ```bash Gemini
+    export GEMINI_API_KEY=your-key-here
+    ```
+    
+    ```bash Groq
+    export GROQ_API_KEY=your-key-here
+    ```
+    </CodeGroup>
+    
+    <Note>
+      If you don't set an API key, Crush will prompt you to enter one when you first launch it. You can also configure providers via the `crush.json` configuration file.
+    </Note>
+    
+    ### Supported environment variables
+    
+    Crush recognizes API keys for many providers:
+    
+    | Environment Variable | Provider |
+    | --- | --- |
+    | `ANTHROPIC_API_KEY` | Anthropic (Claude) |
+    | `OPENAI_API_KEY` | OpenAI (GPT) |
+    | `GEMINI_API_KEY` | Google Gemini |
+    | `GROQ_API_KEY` | Groq |
+    | `OPENROUTER_API_KEY` | OpenRouter |
+    | `VERCEL_API_KEY` | Vercel AI Gateway |
+    | `HF_TOKEN` | Hugging Face Inference |
+    | `CEREBRAS_API_KEY` | Cerebras |
+    
+    See the [providers configuration guide](/configuration/providers) for the complete list and advanced setup options.
+  </Step>
+  
+  <Step title="Launch Crush">
+    Navigate to your project directory and start Crush:
+    
+    ```bash
+    cd /path/to/your/project
+    crush
+    ```
+    
+    <Tip>
+      Running Crush from your project directory allows it to understand your codebase structure, read configuration files, and use LSPs for code intelligence.
+    </Tip>
+    
+    When Crush starts, you'll see:
+    
+    - The Crush welcome screen with the logo
+    - A model selector if you have multiple providers configured
+    - A prompt where you can type your request
+    
+    The terminal interface includes:
+    - **Message area**: Conversation history with syntax-highlighted code
+    - **Input prompt**: Where you type your requests
+    - **Status bar**: Shows current model, session name, and token usage
+  </Step>
+  
+  <Step title="Your first interaction">
+    Try asking Crush to help you with a coding task. Here are some example prompts to get started:
+    
+    <AccordionGroup>
+      <Accordion title="Understand your codebase">
+        ```
+        What does this project do? Give me an overview of the codebase structure.
+        ```
+        
+        Crush will analyze your files and provide a summary of your project architecture.
+      </Accordion>
+      
+      <Accordion title="Write new code">
+        ```
+        Create a new function in utils.go that parses command-line flags and returns a config struct.
+        ```
+        
+        Crush will:
+        1. Read relevant files to understand your project structure
+        2. Generate the code following your project's patterns
+        3. Ask permission before writing files
+        4. Create or edit the necessary files
+      </Accordion>
+      
+      <Accordion title="Debug an issue">
+        ```
+        I'm getting a null pointer error when running the server. Can you help me find and fix it?
+        ```
+        
+        Crush will:
+        1. Search for potential null pointer issues
+        2. Use LSP diagnostics if available
+        3. Suggest fixes with explanations
+        4. Apply the fixes with your permission
+      </Accordion>
+      
+      <Accordion title="Refactor code">
+        ```
+        Refactor the authentication logic in auth.go to use the new JWT library.
+        ```
+        
+        Crush will analyze your existing code and refactor it while maintaining functionality.
+      </Accordion>
+    </AccordionGroup>
+    
+    ### Tool permissions
+    
+    When Crush wants to execute tools (like editing files or running commands), it will ask for your permission:
+    
+    ```
+    Crush wants to use the edit tool:
+    • Edit src/utils.go
+    
+    [a]llow  [d]eny  [v]iew  allow [A]ll
+    ```
+    
+    - Press `a` to allow this specific action
+    - Press `A` to allow all tools for this session
+    - Press `v` to view the changes before deciding
+    - Press `d` to deny the action
+    
+    <Warning>
+      You can skip permission prompts entirely with the `--yolo` flag, but use this with extreme caution as it allows Crush to make changes without confirmation.
+    </Warning>
+  </Step>
+</Steps>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+## Essential keyboard shortcuts
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+While chatting with Crush:
 
-### Step 3: Go live
+- `Ctrl+C`: Cancel current operation or exit
+- `Ctrl+D`: Send message (alternative to Enter)
+- `Up/Down arrows`: Navigate message history
+- `Ctrl+L`: Clear screen
+- `Ctrl+R`: Restart LSP servers
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+## Working with sessions
+
+Crush maintains conversation context in sessions. Each session is tied to your current directory.
+
+### Create a new session
+
+```bash
+crush --session my-feature
+```
+
+### List all sessions
+
+```bash
+crush sessions
+```
+
+### Resume a session
+
+Just navigate to the same directory and run `crush` with the same session name. Crush remembers your conversation history and project context.
+
+<Tip>
+  Use different sessions for different features or experiments. This keeps your context focused and makes it easier to track changes.
+</Tip>
+
+## Switching models mid-session
+
+One of Crush's unique features is the ability to switch LLM providers without losing context:
+
+1. Press `Ctrl+M` (or type `/models`) during a session
+2. Select a different model from the list
+3. Continue your conversation with the new model
+
+This is useful for:
+- Comparing model outputs on the same task
+- Using faster models for simple tasks, more powerful ones for complex problems
+- Managing costs by switching to cheaper models when appropriate
+
+## Configuration basics
+
+Crush looks for configuration in these locations (in order of priority):
+
+1. `.crush.json` (hidden, in current directory)
+2. `crush.json` (in current directory)
+3. `~/.config/crush/crush.json` (global configuration)
+
+Here's a minimal configuration example:
+
+```json crush.json
+{
+  "$schema": "https://charm.land/crush.json",
+  "options": {
+    "context_paths": ["AGENTS.md", "docs/"],
+    "debug": false
+  },
+  "permissions": {
+    "allowed_tools": ["view", "ls", "grep"]
+  }
+}
+```
+
+This configuration:
+- Adds `AGENTS.md` and the `docs/` directory to the context
+- Pre-allows `view`, `ls`, and `grep` tools without prompting
+
+See the [configuration overview](/configuration/overview) for comprehensive documentation.
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
+Now that you've completed your first Crush session, explore these topics:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Configure Providers" icon="brain" href="/configuration/providers">
+    Set up multiple LLM providers and customize model settings
+  </Card>
+  
+  <Card title="LSP Integration" icon="code" href="/configuration/lsp">
+    Enable Language Server Protocol support for better code intelligence
+  </Card>
+  
+  <Card title="Context Files" icon="file" href="/guides/context-files">
+    Learn how to provide project-specific instructions to Crush
+  </Card>
+  
+  <Card title="MCP Servers" icon="puzzle-piece" href="/configuration/mcp">
+    Extend Crush capabilities with Model Context Protocol servers
+  </Card>
 </CardGroup>
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  Need help? Join the Crush community on [Discord](https://charm.land/discord), [Slack](https://charm.land/slack), or ask questions on [GitHub Discussions](https://github.com/charmbracelet/crush/discussions).
 </Note>

@@ -1,0 +1,339 @@
+---
+title: View Tool
+description: Read and display file contents with line numbers for examining code, logs, and text data
+---
+
+## Overview
+
+The View tool reads files and displays their contents with line numbers. It's the primary tool for examining files before making edits, understanding code structure, and gathering context.
+
+## Parameters
+
+<ParamField path="file_path" type="string" required>
+  The path to the file to read. Can be absolute or relative to the working directory.
+</ParamField>
+
+<ParamField path="offset" type="number">
+  The line number to start reading from (0-based). Use this to read specific sections of large files. Defaults to 0.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  The maximum number of lines to read. Defaults to 2000 lines. Use with offset to paginate through large files.
+</ParamField>
+
+## Features
+
+### Line Numbers
+
+All output includes line numbers in the format:
+
+```
+     1|package main
+     2|
+     3|import "fmt"
+     4|
+     5|func main() {
+     6|	fmt.Println("Hello")
+     7|}
+```
+
+The line numbers are right-aligned and padded with spaces for easy reading.
+
+### Large File Handling
+
+For files with more than 2000 lines, use the `offset` and `limit` parameters:
+
+```json
+{
+  "file_path": "/path/to/large-file.go",
+  "offset": 2000,
+  "limit": 2000
+}
+```
+
+This reads lines 2000-3999.
+
+### File Suggestions
+
+If a file is not found, View will suggest similarly-named files:
+
+```
+File not found: /path/to/fle.txt
+
+Did you mean one of these?
+/path/to/file.txt
+/path/to/file2.txt
+```
+
+### Image Support
+
+View can display image files directly in the terminal when using models that support vision:
+
+**Supported formats:**
+- PNG (`.png`)
+- JPEG (`.jpg`, `.jpeg`)
+- GIF (`.gif`)
+- WebP (`.webp`)
+
+Images are automatically detected by file extension and rendered appropriately.
+
+## Limitations
+
+### File Size
+
+- **Maximum file size:** 5 MB
+- Files larger than 5 MB cannot be read
+- Use pagination with offset/limit for large text files
+
+### Line Length
+
+- **Maximum line length:** 2000 characters
+- Lines longer than 2000 characters are truncated with `...`
+
+### Default Line Limit
+
+- **Default limit:** 2000 lines per read
+- Skill files (SKILL.md) have no limit
+- Use offset to read beyond the first 2000 lines
+
+### Binary Files
+
+- Non-text files cannot be displayed (except images)
+- Binary file detection is automatic
+- Use appropriate tools for binary file inspection
+
+## Output Format
+
+View returns output wrapped in `<file>` tags:
+
+```xml
+<file>
+     1|package main
+     2|
+     3|func main() {
+     4|}
+</file>
+```
+
+For files with more lines:
+
+```xml
+<file>
+     1|first line
+     2|second line
+  ...
+  2000|line 2000
+
+(File has more lines. Use 'offset' parameter to read beyond line 2000)
+</file>
+```
+
+## LSP Integration
+
+When viewing code files, Crush automatically:
+
+1. **Opens the file in LSP** if a language server is available
+2. **Waits briefly for diagnostics** (300ms)
+3. **Includes diagnostics** in the output:
+
+```xml
+<file>
+     1|package main
+     2|
+     3|func main() {
+     4|    x := "unused"
+     5|}
+</file>
+
+<diagnostics file="/path/to/file.go">
+  Line 4: x declared and not used (warning)
+</diagnostics>
+```
+
+## Usage Examples
+
+### Read Entire File
+
+```json
+{
+  "file_path": "/path/to/config.go"
+}
+```
+
+### Read Specific Section
+
+```json
+{
+  "file_path": "/path/to/large-file.go",
+  "offset": 100,
+  "limit": 50
+}
+```
+
+This reads lines 100-149.
+
+### Read Next Section
+
+After reading the first 2000 lines:
+
+```json
+{
+  "file_path": "/path/to/large-file.go",
+  "offset": 2000,
+  "limit": 2000
+}
+```
+
+## Best Practices
+
+### When to Use View
+
+1. **Before editing** - Always view a file before making changes
+2. **Understanding code** - Read files to understand structure and context
+3. **Checking results** - View files after edits to verify changes
+4. **Gathering context** - Read related files to understand dependencies
+
+### Efficient Reading
+
+1. **Start with Grep or Glob** - Find relevant files first
+2. **Use offset/limit** - For large files, read specific sections
+3. **Read multiple files in parallel** - When gathering context
+
+### Reading Large Files
+
+```json
+[
+  {"file_path": "/path/to/file.go", "offset": 0, "limit": 1000},
+  {"file_path": "/path/to/file.go", "offset": 1000, "limit": 1000}
+]
+```
+
+This reads the first 2000 lines in two parallel requests.
+
+## Permissions
+
+### Auto-Approved
+
+- Reading files within the working directory
+- Reading skill files (SKILL.md)
+
+### Requires Permission
+
+- Reading files outside the working directory
+
+You can pre-approve View for specific paths:
+
+```json
+{
+  "allow": {
+    "view": ["~/projects/myapp", "/etc/nginx"]
+  }
+}
+```
+
+## Cross-Platform Notes
+
+### Line Endings
+
+- **Unix/Linux/macOS**: LF (`\n`)
+- **Windows**: CRLF (`\r\n`)
+
+View handles both transparently and displays them consistently.
+
+### Path Separators
+
+Use forward slashes `/` for all platforms:
+- ✅ `C:/Users/name/file.txt`
+- ❌ `C:\\Users\\name\\file.txt`
+
+Relative paths work naturally:
+- `src/main.go`
+- `../config.json`
+
+## Common Workflows
+
+### Edit Workflow
+
+1. **View the file** to understand current state
+2. **Identify the change** needed
+3. **Use Edit tool** with exact text from View output
+4. **View again** to verify changes
+
+### Code Understanding
+
+1. **Use Grep** to find relevant files
+2. **View each file** to understand implementation
+3. **Follow imports** by viewing related files
+4. **Note LSP diagnostics** for potential issues
+
+### Debugging
+
+1. **View error logs** to see error messages
+2. **View source files** to understand the code
+3. **View test files** to understand expected behavior
+4. **Check LSP diagnostics** for compile errors
+
+## Troubleshooting
+
+### File Not Found
+
+- Check the path is correct
+- Use LS tool to verify directory contents
+- Check for typos in filename
+- Use absolute paths to avoid ambiguity
+
+### File Too Large
+
+- Use offset and limit to read sections
+- Consider if you need the entire file
+- Use Grep to search for specific content
+
+### Binary File Error
+
+- View is for text files only
+- Use appropriate tools for binary inspection
+- Check file extension matches content
+
+### Permission Denied
+
+- File may be outside working directory
+- Approve the permission prompt
+- Add to allow list if regularly accessed
+
+## View vs Other Tools
+
+### View vs Bash cat
+
+**Use View:**
+- Provides line numbers
+- Integrates with LSP
+- Handles large files better
+- Cross-platform consistent
+
+**Use Bash cat:**
+- Piping to other commands
+- When combined with other shell tools
+
+### View vs Grep
+
+**Use View:**
+- Reading entire files
+- Understanding file structure
+- Seeing context around code
+
+**Use Grep:**
+- Finding specific patterns
+- Searching across many files
+- When you know what you're looking for
+
+### View vs Editor Tools
+
+**Use View:**
+- Reading current state
+- Before making edits
+- After making edits to verify
+
+**Use Edit/Write:**
+- Making changes to files
+- Creating new files
+- Modifying existing content

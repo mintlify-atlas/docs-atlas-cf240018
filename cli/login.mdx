@@ -1,0 +1,267 @@
+---
+title: crush login
+description: Authenticate Crush with AI providers using OAuth
+---
+
+The `crush login` command handles OAuth authentication for providers that support it, making it easy to connect Crush to your AI accounts.
+
+## Usage
+
+```bash
+crush login [platform] [flags]
+```
+
+## Description
+
+Authenticate Crush with supported platforms using OAuth device flow. This command manages the complete OAuth flow including:
+
+- Initiating device authorization
+- Opening the browser for authentication
+- Polling for token completion
+- Storing credentials securely in your Crush configuration
+
+## Supported Platforms
+
+<ParamField path="hyper" type="string" default="true">
+  **Charm Hyper** - Charm's managed AI service with access to multiple models.
+  
+  Default platform when no argument is provided.
+</ParamField>
+
+<ParamField path="copilot" type="string">
+  **GitHub Copilot** - GitHub's AI pair programmer.
+  
+  Aliases: `github`, `github-copilot`
+</ParamField>
+
+## Arguments
+
+<ParamField path="platform" type="string" default="hyper">
+  The platform to authenticate with. Must be one of: `hyper`, `copilot`, `github`, or `github-copilot`.
+  
+  If omitted, defaults to `hyper`.
+</ParamField>
+
+## Global Flags
+
+All [global flags](/cli/crush#global-flags) are available: `--cwd`, `--data-dir`, `--debug`
+
+## Examples
+
+<CodeGroup>
+```bash Hyper (default)
+# Authenticate with Charm Hyper
+crush login
+# or explicitly
+crush login hyper
+```
+
+```bash GitHub Copilot
+# Authenticate with GitHub Copilot
+crush login copilot
+
+# Alternative forms
+crush login github
+crush login github-copilot
+```
+</CodeGroup>
+
+## Authentication Flows
+
+### Hyper Authentication
+
+When authenticating with Hyper:
+
+1. **Device code generation**: Crush requests a device code from Hyper
+2. **User code display**: A short code is displayed (and copied to clipboard if possible)
+3. **Browser opening**: Press Enter to open the verification URL
+4. **Code entry**: Paste the code in your browser
+5. **Token exchange**: Crush polls for authorization and exchanges tokens
+6. **Verification**: The access token is verified
+7. **Storage**: Credentials are saved to your `crush.json`
+
+#### Example Output
+
+```
+The following code should be on clipboard already:
+
+ABCD-1234
+
+Press enter to open this URL, and then paste it there:
+
+https://hyper.charm.sh/device
+
+Exchanging authorization code...
+Exchanging refresh token for access token...
+Verifying access token...
+
+You're now authenticated with Hyper!
+```
+
+### GitHub Copilot Authentication
+
+When authenticating with GitHub Copilot:
+
+1. **Token detection**: Checks for existing Copilot tokens on disk
+2. **Token refresh**: If found, attempts to refresh the existing token
+3. **Device code flow**: If no token exists, initiates OAuth device flow
+4. **Browser authorization**: User authorizes via GitHub
+5. **Token polling**: Crush waits for authorization completion
+6. **Storage**: Credentials are saved to your `crush.json`
+
+#### Example Output (New User)
+
+```
+Requesting device code from GitHub...
+
+Open the following URL and follow the instructions to authenticate with GitHub Copilot:
+
+https://github.com/login/device
+
+Code: ABCD-1234
+
+Waiting for authorization...
+
+You're now authenticated with GitHub Copilot!
+```
+
+#### Example Output (Existing Token)
+
+```
+Found existing GitHub Copilot token on disk. Using it to authenticate...
+
+You're now authenticated with GitHub Copilot!
+```
+
+#### Copilot Not Available
+
+If GitHub Copilot is not available for your account:
+
+```
+GitHub Copilot is unavailable for this account. To signup, go to the following page:
+
+https://github.com/github-copilot/signup
+
+You may be able to request free access if eligible. For more information, see:
+
+https://docs.github.com/copilot/managing-copilot/managing-copilot-as-an-individual-subscriber/about-github-copilot-free
+```
+
+## Configuration Storage
+
+Authentication tokens are stored in your `crush.json` file:
+
+```json
+{
+  "providers": {
+    "hyper": {
+      "api_key": "<access_token>",
+      "oauth": {
+        "access_token": "<token>",
+        "refresh_token": "<refresh>",
+        "expires_at": "2024-12-31T23:59:59Z"
+      }
+    },
+    "copilot": {
+      "api_key": "<access_token>",
+      "oauth": {
+        "access_token": "<token>",
+        "refresh_token": "<refresh>",
+        "expires_at": "2024-12-31T23:59:59Z"
+      }
+    }
+  }
+}
+```
+
+## Token Management
+
+### Automatic Refresh
+
+Crush automatically refreshes expired OAuth tokens when:
+
+- Starting a new session
+- Running a command
+- Making API requests
+
+### Manual Re-authentication
+
+To re-authenticate (e.g., if tokens are invalid):
+
+```bash
+# Simply run login again
+crush login hyper
+crush login copilot
+```
+
+### Viewing Token Status
+
+To check if you're authenticated:
+
+```bash
+# View your configuration
+cat ~/.crush/crush.json | grep -A5 'oauth'
+```
+
+## Troubleshooting
+
+### "hyper not enabled"
+
+This error occurs when trying to authenticate with Hyper, but it's not available. Hyper may require:
+
+- A specific build of Crush
+- Beta access
+- Environment configuration
+
+### "unknown platform"
+
+You specified an invalid platform name. Valid options are:
+
+- `hyper`
+- `copilot`
+- `github`
+- `github-copilot`
+
+### Browser Doesn't Open
+
+If the browser fails to open automatically:
+
+```
+Could not open the URL. You'll need to manually open the URL in your browser.
+```
+
+Manually copy the displayed URL and open it in your browser.
+
+### Token Refresh Failed
+
+If token refresh fails:
+
+```bash
+# Re-run the login command
+crush login copilot
+```
+
+### Interrupt During Authentication
+
+Press `Ctrl+C` to cancel the authentication process. The command responds to `SIGINT` and `SIGTERM` signals.
+
+## Security Considerations
+
+- **Clipboard access**: The Hyper flow attempts to copy the device code to your clipboard for convenience
+- **Token storage**: OAuth tokens are stored in plain text in `crush.json` - protect this file with appropriate permissions
+- **File permissions**: The Crush data directory is created with `0700` permissions (owner-only access)
+- **No password storage**: OAuth tokens are used instead of passwords
+- **Refresh tokens**: Stored securely and used to obtain new access tokens
+
+## Aliases
+
+The `login` command has the following alias:
+
+```bash
+crush auth [platform]
+```
+
+## See Also
+
+- [Providers](/configuration/providers) - Configuring AI providers
+- [Configuration](/configuration/overview) - Understanding crush.json

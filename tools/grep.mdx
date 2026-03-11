@@ -1,0 +1,420 @@
+---
+title: Grep Tool
+description: Fast content search tool for finding files containing specific patterns using regex
+---
+
+## Overview
+
+The Grep tool searches file contents using regular expressions and returns matching files with line numbers and context. Results are sorted by modification time (newest first) to prioritize recently changed files.
+
+## Parameters
+
+<ParamField path="pattern" type="string" required>
+  The regex pattern to search for in file contents. Use literal_text=true for exact text matching.
+</ParamField>
+
+<ParamField path="path" type="string">
+  The directory to search in. Defaults to the current working directory.
+</ParamField>
+
+<ParamField path="include" type="string">
+  File pattern to include in the search (e.g., `*.js`, `*.{ts,tsx}`). Only searches files matching this pattern.
+</ParamField>
+
+<ParamField path="literal_text" type="boolean">
+  If true, treats the pattern as literal text with special regex characters escaped. Recommended for non-regex users. Defaults to false.
+</ParamField>
+
+## Features
+
+### Regex Support
+
+When `literal_text: false` (default), full regex syntax is supported:
+
+- `.` - Any character
+- `*` - Zero or more of previous
+- `+` - One or more of previous
+- `?` - Zero or one of previous
+- `[]` - Character class
+- `()` - Grouping
+- `|` - Alternation
+- `^` - Start of line
+- `$` - End of line
+- `\s` - Whitespace
+- `\w` - Word character
+- `\d` - Digit
+
+### Literal Text Mode
+
+Set `literal_text: true` to search for exact text:
+
+```json
+{
+  "pattern": "function()",
+  "literal_text": true
+}
+```
+
+This searches for the literal text `function()` instead of treating it as a regex.
+
+### File Filtering
+
+Use `include` to limit which files are searched:
+
+```json
+{
+  "pattern": "TODO",
+  "include": "*.{js,ts,tsx}"
+}
+```
+
+Common patterns:
+- `*.js` - JavaScript files
+- `*.{ts,tsx}` - TypeScript files
+- `*.go` - Go files
+- `*.{py,pyw}` - Python files
+- `*test*` - Test files
+
+### Ignore Support
+
+Grep automatically respects:
+- `.gitignore` patterns
+- `.crushignore` patterns
+
+Files and directories matching these patterns are skipped.
+
+### Performance
+
+**Fast search with ripgrep:**
+- Uses ripgrep (rg) if available on the system
+- Falls back to Go implementation if ripgrep not found
+- Searches are parallelized for speed
+
+**Result limits:**
+- Maximum 100 matching files returned
+- Results sorted by modification time (newest first)
+- Truncation notice shown if limit exceeded
+
+## Output Format
+
+Results show file paths with matching lines:
+
+```
+Found 3 matches
+
+src/handler.go:
+  Line 15, Char 5: func HandleRequest(req *Request) error {
+  Line 23, Char 9: return HandleResponse(resp)
+
+src/server.go:
+  Line 45, Char 2: handler := HandleRequest
+```
+
+Each match includes:
+- **File path** (slash-separated for cross-platform compatibility)
+- **Line number** where match occurs
+- **Character position** (1-based) of the match
+- **Line content** (truncated to 500 characters if longer)
+
+## Usage Examples
+
+### Simple Text Search
+
+```json
+{
+  "pattern": "TODO"
+}
+```
+
+Searches for "TODO" in all text files.
+
+### Regex Pattern Search
+
+```json
+{
+  "pattern": "func\\s+\\w+\\("
+}
+```
+
+Finds function declarations in Go files.
+
+### Literal Text with Special Characters
+
+```json
+{
+  "pattern": "config.Get(\"api_key\")",
+  "literal_text": true
+}
+```
+
+Searches for the exact text including parentheses and quotes.
+
+### Filter by File Type
+
+```json
+{
+  "pattern": "import.*React",
+  "include": "*.{ts,tsx}"
+}
+```
+
+Searches only TypeScript files for React imports.
+
+### Search in Specific Directory
+
+```json
+{
+  "pattern": "database",
+  "path": "/path/to/project/src"
+}
+```
+
+## Regex Pattern Examples
+
+### Find Function Definitions
+
+```json
+{"pattern": "^func\\s+\\w+"}
+```
+
+Matches Go function definitions at the start of lines.
+
+### Find Import Statements
+
+```json
+{"pattern": "import\\s+.*\\s+from"}
+```
+
+Matches JavaScript/TypeScript import statements.
+
+### Find Error Handling
+
+```json
+{"pattern": "if\\s+err\\s*!=\\s*nil"}
+```
+
+Matches Go error checks.
+
+### Find TODO Comments
+
+```json
+{"pattern": "//\\s*TODO:"}
+```
+
+Matches TODO comments in code.
+
+### Find Function Calls
+
+```json
+{"pattern": "\\w+\\.Logger\\("}
+```
+
+Matches method calls to Logger.
+
+## Best Practices
+
+### Effective Searching
+
+1. **Start broad, then narrow** - Begin with simple patterns, add specificity
+2. **Use include patterns** - Filter by file type to reduce noise
+3. **Check truncation notice** - Refine search if results are truncated
+4. **Combine with Glob** - Use Glob to find files, Grep to search contents
+
+### Pattern Design
+
+1. **Test patterns** - Start simple and add complexity
+2. **Escape special characters** - Or use `literal_text: true`
+3. **Use anchors** - `^` and `$` for line boundaries
+4. **Consider context** - Include surrounding text in pattern
+
+### Performance
+
+1. **Be specific** - More specific patterns = faster results
+2. **Use file filters** - Searching fewer files = faster
+3. **Avoid .* at start** - Leading wildcards are slow
+4. **Consider search scope** - Smaller directories = faster
+
+## Common Patterns
+
+### Code Patterns
+
+```json
+// Find class definitions
+{"pattern": "class\\s+\\w+"}
+
+// Find variable declarations
+{"pattern": "(var|let|const)\\s+\\w+"}
+
+// Find function calls
+{"pattern": "\\w+\\([^)]*\\)"}
+
+// Find comments
+{"pattern": "//.*|/\\*.*\\*/"}
+```
+
+### Configuration Patterns
+
+```json
+// Find environment variables
+{"pattern": "process\\.env\\.\\w+"}
+
+// Find hardcoded URLs
+{"pattern": "https?://[^\"'\\s]+"}
+
+// Find API keys (be careful!)
+{"pattern": "api[_-]?key"}
+```
+
+### Documentation Patterns
+
+```json
+// Find TODOs
+{"pattern": "TODO|FIXME|HACK"}
+
+// Find function documentation
+{"pattern": "^\\s*//.*@param"}
+
+// Find markdown headings
+{"pattern": "^#+\\s+"}
+```
+
+## Permissions
+
+Grep does not require permissions when:
+- Searching within the working directory
+- Reading text files
+
+No permission prompts are shown for search operations.
+
+## Cross-Platform Notes
+
+### File Paths
+
+Results use forward slashes `/` on all platforms:
+- Windows: `C:/Users/name/file.txt`
+- Unix: `/home/user/file.txt`
+
+### Hidden Files
+
+Hidden files (starting with `.`) are skipped by default on all platforms, matching ripgrep behavior.
+
+### Line Endings
+
+Both Unix (LF) and Windows (CRLF) line endings are handled transparently.
+
+## Troubleshooting
+
+### No Matches Found
+
+- Check pattern syntax
+- Try simpler pattern first
+- Verify file type with include pattern
+- Check if files are in .gitignore
+- Use View to verify file contents
+
+### Too Many Results
+
+- Make pattern more specific
+- Use include to filter file types
+- Specify a narrower search path
+- Add context to pattern
+
+### Pattern Errors
+
+- Check regex syntax
+- Escape special characters
+- Use `literal_text: true` for exact text
+- Test pattern in isolation
+
+### Performance Issues
+
+- Narrow search scope with path
+- Use include to filter files
+- Make pattern more specific
+- Avoid leading wildcards
+- Install ripgrep for faster search
+
+## Grep vs Other Tools
+
+### Grep vs View
+
+**Use Grep when:**
+- You need to find files containing text
+- You're searching across many files
+- You know what pattern to look for
+
+**Use View when:**
+- You want to read entire files
+- You need to see file structure
+- You need context around code
+
+### Grep vs Glob
+
+**Use Grep when:**
+- Searching file contents
+- Pattern matching text inside files
+- Finding specific code patterns
+
+**Use Glob when:**
+- Finding files by name
+- Searching by file path patterns
+- File system organization
+
+### Grep vs Bash grep
+
+**Use Grep tool:**
+- Respects .gitignore automatically
+- Sorted by modification time
+- Integrated into Crush workflow
+- Cross-platform consistent
+
+**Use Bash grep:**
+- Complex shell pipelines
+- When combined with other commands
+- Custom output formatting
+
+## Advanced Usage
+
+### Multi-Pattern Search
+
+To search for multiple patterns, use regex alternation:
+
+```json
+{
+  "pattern": "(error|Error|ERROR)"
+}
+```
+
+### Case-Insensitive Search
+
+Use regex flag:
+
+```json
+{
+  "pattern": "(?i)error"
+}
+```
+
+### Context-Aware Search
+
+Include surrounding context in pattern:
+
+```json
+{
+  "pattern": "func\\s+\\w+.*\\{[^}]*error[^}]*\\}"
+}
+```
+
+This finds functions containing "error" in their body.
+
+### Exclude Patterns
+
+Use negative lookahead:
+
+```json
+{
+  "pattern": "func\\s+(?!test)\\w+"
+}
+```
+
+This finds functions not starting with "test".

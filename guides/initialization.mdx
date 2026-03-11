@@ -1,0 +1,263 @@
+---
+title: "Project Initialization"
+description: "Let Crush analyze your project and create tailored context"
+---
+
+## What Is Project Initialization?
+
+Project initialization is a process where Crush analyzes your codebase and creates a context file with project-specific information. This helps Crush understand your project's structure, conventions, and patterns right from the start.
+
+The initialization process:
+
+1. Scans your project directory
+2. Identifies the tech stack, frameworks, and tools
+3. Discovers coding conventions and patterns
+4. Analyzes project structure and organization
+5. Creates a context file with this information
+
+## When Does Initialization Happen?
+
+Crush automatically offers to initialize a project when:
+
+- You run Crush in a new project directory for the first time
+- The project has no existing context files (like `AGENTS.md`, `CRUSH.md`, etc.)
+- The directory contains files (not an empty directory)
+- No initialization flag exists in `./.crush/`
+
+If you skip initialization, you can always initialize later by deleting the `.crush/init` flag file and restarting Crush.
+
+## The Generated Context File
+
+By default, initialization creates a file called `AGENTS.md` in your project root. This file contains:
+
+### Project Overview
+
+- Programming languages detected
+- Frameworks and libraries in use
+- Build tools and task runners
+- Package managers
+
+### Code Conventions
+
+- Formatting style discovered from existing code
+- Naming patterns for files, functions, and variables
+- Common architectural patterns
+- Testing approaches
+
+### Project Structure
+
+- Directory organization
+- Key directories and their purposes
+- Configuration file locations
+
+### Build and Development
+
+- Build commands
+- Test commands
+- Development server commands
+- Linting and formatting tools
+
+## Example AGENTS.md
+
+Here's an example of what Crush might generate for a Go project:
+
+```markdown
+# Crush Development Guide
+
+## Project Overview
+
+Crush is a terminal-based AI coding assistant built in Go by
+[Charm](https://charm.land). It connects to LLMs and gives them tools to read,
+write, and execute code.
+
+The module path is `github.com/charmbracelet/crush`.
+
+## Architecture
+
+- `internal/cmd/`: CLI commands (root, run, login, models, stats)
+- `internal/config/`: Configuration loading and management
+- `internal/agent/`: AI agent implementation
+- `internal/session/`: Session management backed by SQLite
+- `internal/db/`: Database layer with sqlc-generated queries
+
+## Build Commands
+
+- Build: `go build .`
+- Test: `go test ./...`
+- Format: `gofumpt -w .`
+- Lint: `golangci-lint run`
+
+## Code Conventions
+
+- Use `gofumpt` for formatting (stricter than `gofmt`)
+- Log messages start with capital letters
+- Use octal notation for file permissions (0o755, 0o644)
+- Return errors explicitly, use `fmt.Errorf` for wrapping
+```
+
+## Customizing the Initialization File
+
+You can configure which file Crush creates during initialization using the `initialize_as` option:
+
+```json
+{
+  "options": {
+    "initialize_as": "AGENTS.md"
+  }
+}
+```
+
+Common alternatives:
+
+- `"AGENTS.md"` (default)
+- `"CRUSH.md"`
+- `"CLAUDE.md"`
+- `"docs/LLMs.md"` (subdirectory)
+- `".github/ai-context.md"`
+
+### Subdirectory Initialization
+
+You can place the initialization file in a subdirectory:
+
+```json
+{
+  "options": {
+    "initialize_as": "docs/AI-CONTEXT.md"
+  }
+}
+```
+
+Crush will create the directory if it doesn't exist.
+
+## How to Initialize a Project
+
+### First-Time Initialization
+
+1. Navigate to your project directory
+2. Run `crush`
+3. When prompted, accept the initialization offer
+4. Wait for Crush to analyze your project
+5. Review the generated file and edit as needed
+
+### Re-Initializing a Project
+
+If you want to re-run initialization (for example, after major project changes):
+
+1. Remove the initialization flag:
+   ```bash
+   rm .crush/init
+   ```
+2. Optionally, back up your existing context file:
+   ```bash
+   mv AGENTS.md AGENTS.md.backup
+   ```
+3. Run `crush` again
+4. Accept the initialization prompt
+5. Compare the new file with your backup and merge any manual changes
+
+<Warning>
+  Re-initialization will overwrite your existing context file. Back up any manual changes first.
+</Warning>
+
+## When to Re-Initialize
+
+Consider re-initializing when:
+
+- You've made significant architectural changes
+- You've adopted new frameworks or libraries
+- Your coding conventions have evolved
+- You've reorganized your project structure
+- The existing context file is outdated
+
+## Manual Editing vs. Initialization
+
+While initialization provides a great starting point, you can:
+
+- **Edit the generated file**: Add project-specific details that Crush couldn't detect
+- **Add additional context files**: Create `CRUSH.local.md` for personal preferences
+- **Mix approaches**: Use initialization for structure, manual editing for domain knowledge
+
+**What to add manually:**
+
+- Business logic context and domain knowledge
+- API contracts and external dependencies
+- Performance considerations
+- Security requirements
+- Team-specific conventions
+
+## Skipping Initialization
+
+You can skip initialization if:
+
+- You prefer to write context files manually
+- You're using a standard project template with existing context
+- The project is very simple and doesn't need context
+- You're just experimenting with Crush
+
+To skip, simply decline when prompted, or create a `.crush/init` file to prevent future prompts:
+
+```bash
+mkdir -p .crush
+touch .crush/init
+```
+
+## Initialization and Context Files
+
+Initialization creates **one** context file (by default, `AGENTS.md`). You can still:
+
+- Create additional context files manually
+- Use other supported filenames (see [Context Files guide](/guides/context-files))
+- Configure custom context paths in `crush.json`
+
+All context files are read and combined, regardless of how they were created.
+
+## What Initialization Does NOT Do
+
+Initialization does not:
+
+- Modify your existing code
+- Create configuration files (except the context file)
+- Change your project structure
+- Install dependencies or tools
+- Commit anything to version control
+
+It only creates a single markdown file with project context.
+
+## Troubleshooting
+
+### Initialization Not Triggering
+
+If Crush doesn't offer to initialize:
+
+1. Check if a context file already exists (like `AGENTS.md`, `CRUSH.md`)
+2. Check if `.crush/init` flag file exists
+3. Ensure your directory has files (empty directories skip initialization)
+
+### Generated File Is Empty or Incomplete
+
+If the generated context file lacks important information:
+
+- Ensure your project files are present and not ignored
+- Check that configuration files (like `package.json`, `go.mod`) are in place
+- Manually edit the file to add missing context
+- Consider using a more descriptive project structure
+
+### Initialization Takes Too Long
+
+For very large projects:
+
+- Ensure your `.gitignore` or `.crushignore` is properly configured
+- Check that `node_modules`, `vendor`, or similar directories are ignored
+- Consider using a smaller, more focused directory for initialization
+
+## Best Practices
+
+<Tip>
+  After initialization, review the generated file and add domain-specific context that Crush couldn't detect automatically.
+</Tip>
+
+1. **Review and refine**: The generated file is a starting point—edit it to add important details
+2. **Version control**: Commit `AGENTS.md` so your team benefits from the context
+3. **Keep it updated**: Re-initialize or manually update when your project changes significantly
+4. **Combine with local files**: Use `CRUSH.local.md` for personal preferences alongside the shared `AGENTS.md`
+5. **Don't over-rely**: Initialization is great, but manual context often captures nuances better

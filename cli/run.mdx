@@ -1,0 +1,239 @@
+---
+title: crush run
+description: Run a single non-interactive prompt and exit
+---
+
+The `crush run` command executes a single prompt in non-interactive mode, making it perfect for scripting, automation, and piping data.
+
+## Usage
+
+```bash
+crush run [prompt...] [flags]
+```
+
+## Description
+
+Run a single prompt in non-interactive mode and exit. The prompt can be provided as command-line arguments or piped from stdin. This is ideal for:
+
+- One-off queries and commands
+- Shell scripting and automation
+- Processing piped data
+- CI/CD pipelines
+- Output redirection to files
+
+## Flags
+
+<ParamField path="--quiet" type="boolean" default="false">
+  Hide the spinner during execution. Useful when you want cleaner output for scripting.
+  
+  Short flag: `-q`
+</ParamField>
+
+<ParamField path="--verbose" type="boolean" default="false">
+  Show detailed logs during execution. Useful for debugging.
+  
+  Short flag: `-v`
+</ParamField>
+
+<ParamField path="--model" type="string" default="configured default">
+  Model to use for this run. Accepts either `model` or `provider/model` format to disambiguate models with the same name across providers.
+  
+  Short flag: `-m`
+  
+  Examples:
+  - `claude-sonnet-4-20250514`
+  - `anthropic/claude-sonnet-4-20250514`
+  - `gpt-4o`
+  - `openai/gpt-4o`
+</ParamField>
+
+<ParamField path="--small-model" type="string" default="configured default">
+  Small model to use for auxiliary tasks. If not provided, uses the default small model for the provider.
+</ParamField>
+
+## Global Flags
+
+All [global flags](/cli/crush#global-flags) are also available: `--debug`, `--yolo`, `--cwd`, `--data-dir`
+
+## Input Methods
+
+### Command-line Arguments
+
+Provide the prompt directly as arguments:
+
+```bash
+crush run "Explain how binary search works"
+```
+
+### Stdin (Pipe)
+
+Pipe data into the prompt:
+
+```bash
+cat README.md | crush run "Summarize this README"
+curl https://charm.land | crush run "What is this website about?"
+```
+
+### File Redirection
+
+Read from a file using shell redirection:
+
+```bash
+crush run "What is this code doing?" < main.go
+```
+
+### Combined Input
+
+When piping data, `crush run` prepends the stdin content to your prompt:
+
+```bash
+cat error.log | crush run "Find the root cause of these errors"
+# Equivalent to: crush run "<contents of error.log>\n\nFind the root cause of these errors"
+```
+
+## Output Redirection
+
+Redirect Crush's output to files:
+
+```bash
+crush run "Generate a README for this project" > README.md
+crush run "Create a .gitignore for a Node.js project" >> .gitignore
+```
+
+## Examples
+
+<CodeGroup>
+```bash Simple query
+# Run a simple prompt
+crush run "Guess my 5 favorite Pokémon"
+```
+
+```bash Pipe from curl
+# Summarize a website
+curl https://charm.land | crush run "Summarize this website"
+```
+
+```bash File analysis
+# Analyze code from a file
+crush run "What is this code doing?" < main.go
+```
+
+```bash Generate and save
+# Generate a README and save it
+crush run "Generate a hot README for this project" > README.md
+```
+
+```bash Quiet mode
+# Run without the spinner
+crush run --quiet "Generate a README for this project"
+```
+
+```bash Verbose mode
+# Run with detailed logs
+crush run --verbose "Analyze this codebase structure"
+```
+
+```bash Specific model
+# Use a specific model
+crush run --model gpt-4o "Explain quantum computing"
+```
+
+```bash Provider-qualified model
+# Disambiguate model by provider
+crush run --model anthropic/claude-sonnet-4-20250514 "Write a poem"
+```
+
+```bash Debugging
+# Run with debug logging in a specific directory
+crush run --debug --cwd /path/to/project "Check for security issues"
+```
+
+```bash Process logs
+# Process and analyze log files
+tail -n 100 app.log | crush run "Identify any errors or anomalies"
+```
+</CodeGroup>
+
+## Scripting Examples
+
+### Automated Code Review
+
+```bash
+#!/bin/bash
+for file in src/**/*.go; do
+  echo "Reviewing $file..."
+  crush run --quiet "Review this code for bugs and improvements" < "$file" > "reviews/${file}.md"
+done
+```
+
+### CI/CD Integration
+
+```yaml
+# .github/workflows/review.yml
+name: AI Code Review
+on: [pull_request]
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Review changes
+        run: |
+          git diff main | crush run --quiet "Review these changes" > review.md
+          cat review.md >> $GITHUB_STEP_SUMMARY
+```
+
+### Batch Processing
+
+```bash
+# Process multiple files
+for file in *.txt; do
+  crush run "Translate this to Spanish" < "$file" > "spanish_${file}"
+done
+```
+
+## Behavior
+
+### Provider Configuration
+
+The command requires at least one provider to be configured. If no providers are set up, you'll see:
+
+```
+no providers configured - please run 'crush' to set up a provider interactively
+```
+
+Run `crush` without arguments to configure providers interactively.
+
+### Non-Interactive Mode
+
+In non-interactive mode:
+
+- No TUI is displayed
+- Output goes directly to stdout
+- A spinner shows progress (unless `--quiet` or `--verbose` is used)
+- Tool permissions still apply (unless `--yolo` is used)
+- Session is not saved to history by default
+
+### Signal Handling
+
+The command responds to interrupt signals:
+
+- `SIGINT` (Ctrl+C): Gracefully cancels the operation
+- `SIGTERM`: Gracefully shuts down
+
+## Differences from `crush`
+
+| Feature | `crush` | `crush run` |
+|---------|---------|-------------|
+| Mode | Interactive TUI | Non-interactive |
+| Output | Terminal UI | Plain text to stdout |
+| Session | Saved to history | One-off execution |
+| Input | Chat interface | Command-line args or stdin |
+| Use case | Development sessions | Scripting, automation |
+| Exit | Manual (Ctrl+C) | Automatic after completion |
+
+## See Also
+
+- [`crush`](/cli/crush) - Interactive mode
+- [`crush models`](/cli/models) - List available models
+- [Configuration](/configuration/overview) - Configure Crush for your needs

@@ -1,0 +1,238 @@
+---
+title: 'Amazon Bedrock'
+description: 'Run Anthropic Claude models through AWS Bedrock'
+icon: 'aws'
+---
+
+Crush supports running Anthropic models through Amazon Bedrock, AWS's managed service for foundation models.
+
+<Note>
+Crush currently supports Anthropic models through Bedrock with **caching disabled**.
+</Note>
+
+## Prerequisites
+
+Before using Bedrock with Crush, you need:
+
+1. An AWS account with Bedrock access
+2. AWS credentials configured locally
+3. Model access enabled in your AWS region
+4. The AWS CLI installed (for `aws configure` method)
+
+## Configuration Methods
+
+There are two ways to configure AWS credentials for Bedrock:
+
+### Method 1: AWS CLI Configuration
+
+The recommended approach is to use the AWS CLI to configure your credentials:
+
+```bash
+aws configure
+```
+
+This will prompt you for:
+
+- AWS Access Key ID
+- AWS Secret Access Key
+- Default region name
+- Default output format
+
+<CodeGroup>
+```bash AWS CLI Configuration
+$ aws configure
+AWS Access Key ID [None]: AKIAIOSFODNN7EXAMPLE
+AWS Secret Access Key [None]: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+Default region name [None]: us-east-1
+Default output format [None]: json
+```
+</CodeGroup>
+
+### Method 2: Environment Variables
+
+Alternatively, you can set environment variables directly:
+
+<CodeGroup>
+```bash Unix/Linux/macOS
+export AWS_ACCESS_KEY_ID="AKIAIOSFODNN7EXAMPLE"
+export AWS_SECRET_ACCESS_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+export AWS_REGION="us-east-1"
+```
+
+```powershell Windows PowerShell
+$env:AWS_ACCESS_KEY_ID="AKIAIOSFODNN7EXAMPLE"
+$env:AWS_SECRET_ACCESS_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+$env:AWS_REGION="us-east-1"
+```
+</CodeGroup>
+
+## Required Environment Variables
+
+Crush expects the following AWS configuration:
+
+### AWS Region
+
+You **must** set either `AWS_REGION` or `AWS_DEFAULT_REGION`:
+
+```bash
+export AWS_REGION="us-east-1"
+# or
+export AWS_DEFAULT_REGION="us-east-1"
+```
+
+Common regions with Bedrock support:
+
+- `us-east-1` (US East - N. Virginia)
+- `us-west-2` (US West - Oregon)
+- `eu-central-1` (Europe - Frankfurt)
+- `ap-southeast-1` (Asia Pacific - Singapore)
+
+<Warning>
+Bedrock is not available in all AWS regions. Check the [AWS Bedrock documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html) for the latest regional availability.
+</Warning>
+
+## Using AWS Profiles
+
+If you have multiple AWS profiles configured, you can specify which one to use with the `AWS_PROFILE` environment variable:
+
+```bash
+AWS_PROFILE=myprofile crush
+```
+
+This is useful when:
+
+- You work with multiple AWS accounts
+- You need different permissions for different projects
+- You want to separate personal and work credentials
+
+### Example: Multiple Profiles
+
+```bash
+# Use your work profile
+AWS_PROFILE=work crush
+
+# Use your personal profile
+AWS_PROFILE=personal crush
+```
+
+## Alternative: Bearer Token Authentication
+
+As an alternative to `aws configure`, you can use the `AWS_BEARER_TOKEN_BEDROCK` environment variable:
+
+```bash
+export AWS_BEARER_TOKEN_BEDROCK="your-bearer-token"
+```
+
+This method is useful for:
+
+- CI/CD pipelines
+- Temporary credentials
+- Service-to-service authentication
+
+<Note>
+Bearer tokens are temporary credentials that expire. Ensure you refresh them as needed.
+</Note>
+
+## Enabling Bedrock in Crush
+
+Once you have AWS configured, Crush will automatically detect your credentials and show Bedrock as an available provider. You can verify this by:
+
+1. Running Crush: `crush`
+2. Checking the list of available models
+3. Looking for Bedrock/Anthropic models in the provider list
+
+No additional configuration in `crush.json` is required for basic Bedrock usage.
+
+## Available Models
+
+Through Bedrock, you can access Anthropic Claude models, including:
+
+- Claude 3.5 Sonnet
+- Claude 3 Opus
+- Claude 3 Sonnet
+- Claude 3 Haiku
+
+Model availability depends on your AWS region and account permissions.
+
+## Current Limitations
+
+<Warning>
+**Prompt caching is currently disabled** for Bedrock models in Crush.
+
+This means:
+- Each request will be treated as new, without cached context
+- Costs may be higher compared to direct Anthropic API usage
+- Response times may be slightly longer for repeated queries
+</Warning>
+
+## Pricing
+
+Bedrock pricing is separate from Anthropic's direct API pricing. Key differences:
+
+- **No prompt caching discount** (since caching is disabled in Crush)
+- **Region-specific pricing** varies by AWS region
+- **On-demand pricing** based on input/output tokens
+- **Provisioned throughput** available for dedicated capacity
+
+Refer to the [AWS Bedrock pricing page](https://aws.amazon.com/bedrock/pricing/) for current rates.
+
+## Troubleshooting
+
+### Bedrock Not Appearing
+
+If Bedrock doesn't show up as a provider:
+
+1. Verify AWS credentials are configured: `aws sts get-caller-identity`
+2. Ensure `AWS_REGION` or `AWS_DEFAULT_REGION` is set
+3. Check that your AWS account has Bedrock access enabled
+
+### Access Denied Errors
+
+If you see permission errors:
+
+1. Verify your IAM user/role has Bedrock permissions
+2. Request model access in the AWS Bedrock console
+3. Check that your region supports Bedrock
+
+### Region Not Supported
+
+If your region doesn't support Bedrock:
+
+1. Switch to a supported region (e.g., `us-east-1`)
+2. Update `AWS_REGION` environment variable
+3. Restart Crush
+
+## IAM Permissions
+
+Your AWS IAM user or role needs the following permissions:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+<Tip>
+Use AWS's managed policy `AmazonBedrockFullAccess` for development, but create a custom policy with minimal permissions for production.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Vertex AI" icon="google" href="/advanced/vertex-ai">
+    Learn about using Google Cloud Vertex AI with Crush
+  </Card>
+  <Card title="Custom Providers" icon="code" href="/advanced/custom-providers">
+    Configure custom API providers
+  </Card>
+</CardGroup>

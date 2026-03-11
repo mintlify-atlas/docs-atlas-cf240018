@@ -1,0 +1,320 @@
+---
+title: 'Custom Providers'
+description: 'Configure custom API providers for OpenAI and Anthropic-compatible services'
+icon: 'code'
+---
+
+Crush supports custom provider configurations, allowing you to connect to any OpenAI-compatible or Anthropic-compatible API endpoint. This enables you to use:
+
+- Alternative API providers (Deepseek, Together AI, etc.)
+- Self-hosted model endpoints
+- Corporate API gateways
+- Regional API endpoints
+- Custom routing services
+
+## Provider Types
+
+Crush supports two main provider types:
+
+### OpenAI-Compatible APIs
+
+Use for services that implement OpenAI's API format.
+
+### Anthropic-Compatible APIs
+
+Use for services that implement Anthropic's API format.
+
+<Note>
+Crush distinguishes between `"openai"` and `"openai-compat"` types. Choose carefully to ensure the best experience.
+</Note>
+
+## OpenAI vs OpenAI-Compat
+
+It's important to understand the difference between these two types:
+
+### `"openai"` Type
+
+Use when:
+
+- Proxying or routing requests **through OpenAI**
+- Using OpenAI's actual API with a custom gateway
+- Your endpoint is OpenAI with additional middleware
+
+**Example use cases:**
+
+- Corporate OpenAI API proxy
+- OpenAI API with custom authentication
+- Azure OpenAI Service
+
+### `"openai-compat"` Type
+
+Use when:
+
+- Using **non-OpenAI providers** with OpenAI-compatible APIs
+- The service mimics OpenAI's API format but uses different models
+- Self-hosting models with OpenAI-compatible servers
+
+**Example use cases:**
+
+- Deepseek API
+- Together AI
+- Local models (Ollama, LM Studio)
+- Perplexity API
+- Groq API
+
+<Warning>
+Using the wrong type may result in unexpected behavior, incorrect model detection, or API errors.
+</Warning>
+
+## OpenAI-Compatible Configuration
+
+Here's a complete example using Deepseek, which provides an OpenAI-compatible API:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "providers": {
+    "deepseek": {
+      "type": "openai-compat",
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key": "$DEEPSEEK_API_KEY",
+      "models": [
+        {
+          "id": "deepseek-chat",
+          "name": "Deepseek V3",
+          "cost_per_1m_in": 0.27,
+          "cost_per_1m_out": 1.1,
+          "cost_per_1m_in_cached": 0.07,
+          "cost_per_1m_out_cached": 1.1,
+          "context_window": 64000,
+          "default_max_tokens": 5000
+        }
+      ]
+    }
+  }
+}
+```
+
+### Configuration Fields
+
+- **`type`**: Set to `"openai-compat"` for non-OpenAI providers
+- **`base_url`**: The API endpoint (without trailing slash for model paths)
+- **`api_key`**: API key, supports environment variable expansion (`$VAR_NAME`)
+- **`models`**: Array of model configurations
+
+<Tip>
+Don't forget to set the environment variable referenced in `api_key`:
+
+```bash
+export DEEPSEEK_API_KEY="your-api-key-here"
+```
+</Tip>
+
+## Anthropic-Compatible Configuration
+
+For services that implement Anthropic's API format:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "providers": {
+    "custom-anthropic": {
+      "type": "anthropic",
+      "base_url": "https://api.anthropic.com/v1",
+      "api_key": "$ANTHROPIC_API_KEY",
+      "extra_headers": {
+        "anthropic-version": "2023-06-01"
+      },
+      "models": [
+        {
+          "id": "claude-sonnet-4-20250514",
+          "name": "Claude Sonnet 4",
+          "cost_per_1m_in": 3,
+          "cost_per_1m_out": 15,
+          "cost_per_1m_in_cached": 3.75,
+          "cost_per_1m_out_cached": 0.3,
+          "context_window": 200000,
+          "default_max_tokens": 50000,
+          "can_reason": true,
+          "supports_attachments": true
+        }
+      ]
+    }
+  }
+}
+```
+
+### Configuration Fields
+
+- **`type`**: Set to `"anthropic"` for Anthropic-compatible APIs
+- **`base_url`**: The API endpoint
+- **`api_key`**: API key, supports environment variable expansion
+- **`extra_headers`**: Optional additional HTTP headers (e.g., API version)
+- **`models`**: Array of model configurations
+
+## Model Metadata
+
+Providing accurate model metadata helps Crush optimize its behavior and track costs:
+
+### Required Fields
+
+- **`id`**: Model identifier used in API requests (must match provider's model ID)
+- **`name`**: Human-readable display name
+
+### Cost Fields
+
+Costs are specified in **USD per 1 million tokens**:
+
+- **`cost_per_1m_in`**: Input token cost
+- **`cost_per_1m_out`**: Output token cost
+- **`cost_per_1m_in_cached`**: Cached input token cost (if applicable)
+- **`cost_per_1m_out_cached`**: Cached output token cost (if applicable)
+
+<Note>
+Set cost fields to `0` if the service is free or you don't want to track costs.
+</Note>
+
+### Context Windows
+
+- **`context_window`**: Maximum total tokens (input + output)
+- **`default_max_tokens`**: Default maximum tokens for responses
+
+<Warning>
+Setting `context_window` larger than the model actually supports will cause API errors.
+</Warning>
+
+### Capabilities
+
+Optional boolean fields that describe model features:
+
+- **`can_reason`**: Model supports extended thinking/reasoning (e.g., Claude 3.5 Sonnet with extended thinking)
+- **`supports_attachments`**: Model can process file attachments
+- **`supports_vision`**: Model can analyze images
+- **`supports_function_calling`**: Model supports function/tool calling
+
+### Example: Complete Model Configuration
+
+```json
+{
+  "id": "deepseek-chat",
+  "name": "Deepseek V3",
+  "cost_per_1m_in": 0.27,
+  "cost_per_1m_out": 1.1,
+  "cost_per_1m_in_cached": 0.07,
+  "cost_per_1m_out_cached": 1.1,
+  "context_window": 64000,
+  "default_max_tokens": 5000,
+  "supports_function_calling": true,
+  "supports_vision": false,
+  "can_reason": false,
+  "supports_attachments": false
+}
+```
+
+## Environment Variable Expansion
+
+Crush supports environment variable expansion in configuration values using the `$VAR_NAME` syntax:
+
+```json
+{
+  "api_key": "$MY_API_KEY",
+  "base_url": "$CUSTOM_ENDPOINT"
+}
+```
+
+This allows you to:
+
+- Keep sensitive credentials out of configuration files
+- Use different values per environment (dev/staging/prod)
+- Share configuration files without exposing secrets
+
+<Tip>
+Always use environment variables for API keys and other sensitive information. Never commit credentials to version control.
+</Tip>
+
+## Multiple Providers
+
+You can configure multiple custom providers in the same configuration file:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "providers": {
+    "deepseek": {
+      "type": "openai-compat",
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key": "$DEEPSEEK_API_KEY",
+      "models": [{ /* ... */ }]
+    },
+    "local-ollama": {
+      "type": "openai-compat",
+      "base_url": "http://localhost:11434/v1",
+      "models": [{ /* ... */ }]
+    },
+    "corporate-gateway": {
+      "type": "openai",
+      "base_url": "https://api.company.com/openai/v1",
+      "api_key": "$CORP_API_KEY",
+      "models": [{ /* ... */ }]
+    }
+  }
+}
+```
+
+## Troubleshooting
+
+### Provider Not Appearing
+
+If your custom provider doesn't show up:
+
+1. Verify JSON syntax is valid
+2. Check that the provider ID doesn't conflict with built-in providers
+3. Ensure environment variables are set and exported
+4. Restart Crush to reload configuration
+
+### API Connection Errors
+
+If Crush can't connect to your API:
+
+1. Verify `base_url` is correct and accessible
+2. Check API key environment variable is set
+3. Test the endpoint with `curl` to confirm it's working
+4. Check firewall/network settings
+
+### Wrong Model Behavior
+
+If the model behaves unexpectedly:
+
+1. Verify you're using the correct `type` (`openai` vs `openai-compat`)
+2. Check that `id` matches the provider's model identifier exactly
+3. Ensure `context_window` matches the model's actual limits
+4. Review provider documentation for API compatibility
+
+### Cost Tracking Issues
+
+If costs aren't tracked correctly:
+
+1. Verify cost fields are set in USD per 1 million tokens
+2. Check that cost values match provider's current pricing
+3. Use `crush stats` to view token usage and costs
+
+## Best Practices
+
+1. **Use environment variables** for all sensitive credentials
+2. **Keep costs updated** to reflect current provider pricing
+3. **Test with small requests** before committing to large operations
+4. **Document custom configurations** in your project's README
+5. **Validate API compatibility** with a simple test before full integration
+6. **Set realistic token limits** based on model capabilities
+7. **Monitor usage** with `crush stats` to avoid unexpected charges
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Local Models" icon="computer" href="/advanced/local-models">
+    Run local models with Ollama or LM Studio
+  </Card>
+  <Card title="Air-Gapped Environments" icon="shield" href="/advanced/air-gapped">
+    Configure Crush for restricted network access
+  </Card>
+</CardGroup>

@@ -1,0 +1,307 @@
+---
+title: crush models
+description: List all available models from configured providers
+---
+
+The `crush models` command displays all available AI models from your configured providers, helping you discover and select the right model for your needs.
+
+## Usage
+
+```bash
+crush models [search-term] [flags]
+```
+
+## Description
+
+List all available models from configured providers. The output shows:
+
+- Provider names
+- Model IDs
+- Hierarchical tree structure (in terminal)
+- Flat list format (when piped)
+
+Only enabled providers are included in the output.
+
+## Arguments
+
+<ParamField path="search-term" type="string" optional>
+  Optional search term to filter models. Searches across provider ID, provider name, model ID, and model name.
+  
+  Case-insensitive partial matching.
+</ParamField>
+
+## Global Flags
+
+All [global flags](/cli/crush#global-flags) are available: `--cwd`, `--data-dir`, `--debug`
+
+## Examples
+
+<CodeGroup>
+```bash List all models
+# Show all available models
+crush models
+```
+
+```bash Search for GPT models
+# Filter for GPT models
+crush models gpt
+```
+
+```bash Search for Claude models
+# Filter for Claude models
+crush models claude
+```
+
+```bash Search by provider
+# Show only Anthropic models
+crush models anthropic
+```
+
+```bash Search for specific version
+# Find GPT-4 models
+crush models gpt-4
+```
+
+```bash Pipe to file
+# Save model list to a file
+crush models > available-models.txt
+```
+
+```bash Pipe to grep
+# Further filter with grep
+crush models | grep sonnet
+```
+</CodeGroup>
+
+## Output Formats
+
+### Terminal Output (Interactive)
+
+When running in a terminal, models are displayed in a tree structure:
+
+```
+anthropic
+├── claude-opus-4-20250514
+├── claude-sonnet-4-20250514
+└── claude-haiku-4-20250514
+openai
+├── gpt-4o
+├── gpt-4o-mini
+└── o1
+gemini
+├── gemini-2.0-flash-exp
+└── gemini-1.5-pro
+```
+
+### Non-Terminal Output (Piped)
+
+When output is piped or redirected, models are listed in `provider/model` format:
+
+```
+anthropic/claude-opus-4-20250514
+anthropic/claude-sonnet-4-20250514
+anthropic/claude-haiku-4-20250514
+openai/gpt-4o
+openai/gpt-4o-mini
+openai/o1
+gemini/gemini-2.0-flash-exp
+gemini/gemini-1.5-pro
+```
+
+This format is ideal for:
+
+- Scripting and automation
+- Parsing with command-line tools
+- Using with `crush run --model`
+
+## Search Behavior
+
+The search term matches against multiple fields:
+
+- **Provider ID**: `anthropic`, `openai`, etc.
+- **Provider Name**: `Anthropic`, `OpenAI`, etc.
+- **Model ID**: `claude-sonnet-4-20250514`, `gpt-4o`, etc.
+- **Model Name**: Display names of models
+
+Searching is:
+
+- **Case-insensitive**: `GPT`, `gpt`, and `Gpt` all match
+- **Partial matching**: `son` matches `sonnet`
+- **Multi-field**: Matches any of the above fields
+
+### Search Examples
+
+```bash
+# Match by version number
+crush models 4-20250514
+
+# Match by model family
+crush models sonnet
+
+# Match by provider
+crush models anthropic
+
+# Match by model tier
+crush models mini
+
+# Match by generation
+crush models gpt-4
+```
+
+## Error Messages
+
+### No Providers Configured
+
+```
+no providers configured - please run 'crush' to set up a provider interactively
+```
+
+**Solution**: Run `crush` to configure at least one provider.
+
+### No Enabled Providers
+
+```
+no enabled providers found
+```
+
+**Solution**: Enable at least one provider in your `crush.json`:
+
+```json
+{
+  "providers": {
+    "anthropic": {
+      "disable": false,
+      "api_key": "..."
+    }
+  }
+}
+```
+
+### No Matching Models
+
+```
+no enabled providers found matching "xyz"
+```
+
+**Solution**: Try a different search term or check your spelling.
+
+## Provider Status
+
+Disabled providers are automatically excluded from the output. To include disabled providers, enable them in `crush.json`:
+
+```json
+{
+  "providers": {
+    "anthropic": {
+      "disable": false  // Change to false to enable
+    }
+  }
+}
+```
+
+## Scripting Usage
+
+### List Models Programmatically
+
+```bash
+#!/bin/bash
+# Get all GPT models
+models=$(crush models gpt)
+echo "$models"
+```
+
+### Count Available Models
+
+```bash
+# Count total models
+crush models | wc -l
+
+# Count Claude models
+crush models claude | wc -l
+```
+
+### Select Model Interactively
+
+```bash
+#!/bin/bash
+# Let user pick a model
+model=$(crush models | fzf)
+crush run --model "$model" "Your prompt here"
+```
+
+### Validate Model Exists
+
+```bash
+#!/bin/bash
+model="gpt-4o"
+if crush models | grep -q "$model"; then
+  echo "Model $model is available"
+else
+  echo "Model $model not found"
+  exit 1
+fi
+```
+
+## Model Information
+
+The `models` command shows which models are available but doesn't display:
+
+- Model capabilities
+- Pricing information
+- Context window sizes
+- Model descriptions
+
+For detailed model information, refer to:
+
+- [Provider documentation](/configuration/providers)
+- Provider websites
+- Your provider's dashboard
+
+## Using Models
+
+Once you've identified a model, use it with:
+
+### Interactive Mode
+
+Select the model in the Crush TUI settings or specify in `crush.json`:
+
+```json
+{
+  "agent": {
+    "default_provider": "anthropic",
+    "default_model": "claude-sonnet-4-20250514"
+  }
+}
+```
+
+### Non-Interactive Mode
+
+```bash
+# Use with crush run
+crush run --model gpt-4o "Your prompt"
+
+# Disambiguate with provider prefix
+crush run --model anthropic/claude-sonnet-4-20250514 "Your prompt"
+```
+
+## Model Naming
+
+Models are identified by their ID, which typically includes:
+
+- **Family**: `claude`, `gpt`, `gemini`
+- **Tier**: `opus`, `sonnet`, `haiku` (Claude) or version number (GPT)
+- **Generation**: `4`, `1.5`, `2.0`
+- **Date**: `20250514` (YYYYMMDD format)
+
+### Examples
+
+- `claude-sonnet-4-20250514` - Claude Sonnet, generation 4, from May 14, 2025
+- `gpt-4o` - GPT-4 Optimized
+- `gemini-2.0-flash-exp` - Gemini 2.0 Flash (experimental)
+
+## See Also
+
+- [`crush run --model`](/cli/run#flags) - Using specific models
+- [Providers](/configuration/providers) - Configuring providers
+- [`crush update-providers`](/cli/update-providers) - Updating model lists
+- [Configuration](/configuration/overview) - Setting default models

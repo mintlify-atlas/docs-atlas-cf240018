@@ -1,0 +1,174 @@
+---
+title: 'Local Models'
+description: 'Run local AI models with Crush using Ollama or LM Studio'
+icon: 'computer'
+---
+
+Crush supports running local AI models through OpenAI-compatible APIs. This allows you to use models running on your own hardware without sending data to external services.
+
+## Ollama
+
+[Ollama](https://ollama.ai) provides a simple way to run large language models locally. Once you have Ollama installed and running, you can configure Crush to use it.
+
+### Configuration
+
+Add the following to your `crush.json` configuration file:
+
+```json
+{
+  "providers": {
+    "ollama": {
+      "name": "Ollama",
+      "base_url": "http://localhost:11434/v1/",
+      "type": "openai-compat",
+      "models": [
+        {
+          "name": "Qwen 3 30B",
+          "id": "qwen3:30b",
+          "context_window": 256000,
+          "default_max_tokens": 20000
+        }
+      ]
+    }
+  }
+}
+```
+
+### Key Configuration Fields
+
+- **`type`**: Must be `"openai-compat"` for OpenAI-compatible APIs
+- **`base_url`**: The endpoint where Ollama is running (default: `http://localhost:11434/v1/`)
+- **`id`**: The model identifier used by Ollama (e.g., `qwen3:30b`, `llama3:70b`)
+- **`context_window`**: Maximum number of tokens the model can process
+- **`default_max_tokens`**: Default output token limit
+
+<Note>
+No API key is required for local Ollama instances.
+</Note>
+
+## LM Studio
+
+[LM Studio](https://lmstudio.ai) is a desktop application for running local LLMs with a user-friendly interface.
+
+### Configuration
+
+Add the following to your `crush.json` configuration file:
+
+```json
+{
+  "providers": {
+    "lmstudio": {
+      "name": "LM Studio",
+      "base_url": "http://localhost:1234/v1/",
+      "type": "openai-compat",
+      "models": [
+        {
+          "name": "Qwen 3 30B",
+          "id": "qwen/qwen3-30b-a3b-2507",
+          "context_window": 256000,
+          "default_max_tokens": 20000
+        }
+      ]
+    }
+  }
+}
+```
+
+### Key Configuration Fields
+
+- **`type`**: Must be `"openai-compat"` for OpenAI-compatible APIs
+- **`base_url`**: The endpoint where LM Studio is running (default: `http://localhost:1234/v1/`)
+- **`id`**: The model identifier from LM Studio
+- **`context_window`**: Maximum number of tokens the model can process
+- **`default_max_tokens`**: Default output token limit
+
+<Note>
+Make sure to start the local server in LM Studio before using it with Crush.
+</Note>
+
+## Model Context Windows and Token Limits
+
+When configuring local models, it's important to set appropriate values for context windows and token limits:
+
+### Context Window
+
+The `context_window` defines the maximum number of tokens (input + output) the model can handle in a single request. Common values:
+
+- Small models (7B parameters): 4,000 - 8,000 tokens
+- Medium models (13-30B parameters): 32,000 - 128,000 tokens
+- Large models (70B+ parameters): 128,000 - 256,000 tokens
+
+### Default Max Tokens
+
+The `default_max_tokens` sets the maximum number of tokens for the model's response. This should be:
+
+- Less than the context window
+- Appropriate for your use case (e.g., 4,000 for code generation, 20,000 for longer explanations)
+- Balanced with input size to stay within the context window
+
+<Warning>
+Setting values too high for your model's actual capabilities will result in errors or truncated responses.
+</Warning>
+
+## Performance Considerations
+
+When running local models, keep these factors in mind:
+
+### Hardware Requirements
+
+- **GPU Memory**: Larger models require more VRAM (e.g., 30B model needs ~20GB)
+- **RAM**: System RAM should be at least 2x the model size for smooth operation
+- **CPU**: Multi-core processors improve inference speed, especially without GPU acceleration
+
+### Response Time
+
+- Local models typically generate 10-50 tokens/second depending on hardware
+- GPU acceleration significantly improves speed (5-10x faster than CPU-only)
+- Smaller models respond faster but may have reduced capabilities
+
+### Model Selection
+
+- **Code-focused models**: Qwen Coder, CodeLlama, DeepSeek Coder
+- **General purpose**: Llama 3, Mistral, Mixtral
+- **Balance size vs. capability** based on your hardware
+
+<Tip>
+Start with smaller models (7B-13B) to test your setup, then scale up if your hardware can handle it.
+</Tip>
+
+## Troubleshooting
+
+### Connection Errors
+
+If Crush can't connect to your local model:
+
+1. Verify the service is running (Ollama or LM Studio)
+2. Check the `base_url` matches the actual endpoint
+3. Ensure no firewall is blocking local connections
+
+### Slow Performance
+
+If responses are very slow:
+
+1. Check if GPU acceleration is enabled in Ollama/LM Studio
+2. Consider using a smaller model
+3. Reduce `default_max_tokens` to generate shorter responses
+
+### Out of Memory Errors
+
+If you see memory errors:
+
+1. Close other applications to free up RAM/VRAM
+2. Use a smaller model variant
+3. Reduce the context window size
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Providers" icon="code" href="/advanced/custom-providers">
+    Learn about configuring custom OpenAI-compatible providers
+  </Card>
+  <Card title="Air-Gapped Environments" icon="shield" href="/advanced/air-gapped">
+    Run Crush in restricted network environments
+  </Card>
+</CardGroup>

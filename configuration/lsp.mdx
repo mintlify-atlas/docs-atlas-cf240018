@@ -1,0 +1,389 @@
+---
+title: LSP Configuration
+description: Configure Language Server Protocol support in Crush
+---
+
+Crush can use Language Server Protocol (LSP) servers for additional context to help inform its decisions, just like your code editor does. LSPs provide Crush with:
+
+- **Code intelligence** - Type information, definitions, references
+- **Diagnostics** - Errors, warnings, and code quality issues
+- **Navigation** - Jump to definitions, find references
+- **Contextual understanding** - Better comprehension of your codebase structure
+
+## How It Works
+
+When working with code, Crush can query LSP servers to:
+
+1. Get diagnostic information about files
+2. Find references to functions, types, and variables
+3. Navigate code structure and relationships
+4. Understand type information and signatures
+
+This additional context helps Crush make better decisions when editing, refactoring, or analyzing code.
+
+## Configuration
+
+Configure LSP servers in your `crush.json` file:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "lsp": {
+    "go": {
+      "command": "gopls",
+      "env": {
+        "GOTOOLCHAIN": "go1.24.5"
+      }
+    },
+    "typescript": {
+      "command": "typescript-language-server",
+      "args": ["--stdio"]
+    },
+    "nix": {
+      "command": "nil"
+    }
+  }
+}
+```
+
+## Configuration Options
+
+Each LSP server configuration supports these fields:
+
+### command
+
+**Type:** `string`
+
+The executable command for the LSP server.
+
+```json
+{
+  "lsp": {
+    "go": {
+      "command": "gopls"
+    }
+  }
+}
+```
+
+### args
+
+**Type:** `string[]`
+
+Command-line arguments to pass to the LSP server.
+
+```json
+{
+  "lsp": {
+    "typescript": {
+      "command": "typescript-language-server",
+      "args": ["--stdio"]
+    }
+  }
+}
+```
+
+### env
+
+**Type:** `object`
+
+Environment variables to set for the LSP server process.
+
+```json
+{
+  "lsp": {
+    "go": {
+      "command": "gopls",
+      "env": {
+        "GOTOOLCHAIN": "go1.24.5",
+        "GOOS": "linux"
+      }
+    }
+  }
+}
+```
+
+### disabled
+
+**Type:** `boolean`  
+**Default:** `false`
+
+Disable a specific LSP server without removing its configuration.
+
+```json
+{
+  "lsp": {
+    "go": {
+      "command": "gopls",
+      "disabled": true
+    }
+  }
+}
+```
+
+### filetypes
+
+**Type:** `string[]`
+
+File extensions this LSP server handles.
+
+```json
+{
+  "lsp": {
+    "rust": {
+      "command": "rust-analyzer",
+      "filetypes": ["rs", "toml"]
+    }
+  }
+}
+```
+
+### root_markers
+
+**Type:** `string[]`
+
+Files or directories that indicate the project root.
+
+```json
+{
+  "lsp": {
+    "typescript": {
+      "command": "typescript-language-server",
+      "args": ["--stdio"],
+      "root_markers": ["package.json", "tsconfig.json"]
+    }
+  }
+}
+```
+
+### options
+
+**Type:** `object`
+
+LSP server-specific settings passed during initialization.
+
+```json
+{
+  "lsp": {
+    "gopls": {
+      "command": "gopls",
+      "options": {
+        "gofumpt": true,
+        "staticcheck": true,
+        "analyses": {
+          "nilness": true,
+          "unusedparams": true
+        }
+      }
+    }
+  }
+}
+```
+
+### init_options
+
+**Type:** `object`
+
+Initialization options passed during the LSP initialize request.
+
+### timeout
+
+**Type:** `integer`  
+**Default:** `30`
+
+Timeout in seconds for LSP server initialization.
+
+```json
+{
+  "lsp": {
+    "go": {
+      "command": "gopls",
+      "timeout": 60
+    }
+  }
+}
+```
+
+## Example Configurations
+
+### Go (gopls)
+
+Advanced configuration with gopls options:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "lsp": {
+    "gopls": {
+      "command": "gopls",
+      "options": {
+        "gofumpt": true,
+        "codelenses": {
+          "gc_details": true,
+          "generate": true,
+          "test": true,
+          "tidy": true
+        },
+        "hints": {
+          "assignVariableTypes": true,
+          "compositeLiteralFields": true,
+          "constantValues": true
+        },
+        "analyses": {
+          "nilness": true,
+          "unusedparams": true,
+          "unusedwrite": true
+        },
+        "staticcheck": true,
+        "directoryFilters": [
+          "-.git",
+          "-node_modules"
+        ]
+      }
+    }
+  }
+}
+```
+
+### TypeScript
+
+```json
+{
+  "lsp": {
+    "typescript": {
+      "command": "typescript-language-server",
+      "args": ["--stdio"],
+      "filetypes": ["ts", "tsx", "js", "jsx"],
+      "root_markers": ["package.json", "tsconfig.json"]
+    }
+  }
+}
+```
+
+### Nix
+
+```json
+{
+  "lsp": {
+    "nix": {
+      "command": "nil",
+      "filetypes": ["nix"],
+      "root_markers": ["flake.nix"]
+    }
+  }
+}
+```
+
+### Rust
+
+```json
+{
+  "lsp": {
+    "rust": {
+      "command": "rust-analyzer",
+      "filetypes": ["rs"],
+      "root_markers": ["Cargo.toml"],
+      "options": {
+        "cargo": {
+          "buildScripts": {
+            "enable": true
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Python
+
+```json
+{
+  "lsp": {
+    "python": {
+      "command": "pyright-langserver",
+      "args": ["--stdio"],
+      "filetypes": ["py"],
+      "root_markers": ["pyproject.toml", "setup.py"]
+    }
+  }
+}
+```
+
+## Installing LSP Servers
+
+Before configuring an LSP server, make sure it's installed:
+
+<CodeGroup>
+```bash Go
+# Install gopls
+go install golang.org/x/tools/gopls@latest
+```
+
+```bash TypeScript
+# Install typescript-language-server
+npm install -g typescript-language-server typescript
+```
+
+```bash Rust
+# Install rust-analyzer
+rustup component add rust-analyzer
+```
+
+```bash Python
+# Install pyright
+npm install -g pyright
+```
+
+```bash Nix
+# Install nil (Nix language server)
+nix-env -iA nixpkgs.nil
+```
+</CodeGroup>
+
+## Debugging LSP Issues
+
+Enable LSP debug logging:
+
+```json
+{
+  "options": {
+    "debug_lsp": true
+  }
+}
+```
+
+Or use the command-line flag:
+
+```bash
+crush --debug-lsp
+```
+
+Logs are written to `./.crush/logs/crush.log` in your project directory.
+
+## Auto LSP Discovery
+
+Crush can automatically discover and configure LSP servers based on root markers in your project:
+
+```json
+{
+  "options": {
+    "auto_lsp": true
+  }
+}
+```
+
+<Note>
+Auto LSP discovery is enabled by default. Set to `false` to disable.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="MCP Servers" icon="plug" href="/configuration/mcp">
+    Add Model Context Protocol servers
+  </Card>
+  <Card title="Tools" icon="wrench" href="/tools/overview">
+    Learn about Crush's built-in tools
+  </Card>
+</CardGroup>

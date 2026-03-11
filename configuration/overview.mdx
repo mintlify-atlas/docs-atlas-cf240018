@@ -1,0 +1,113 @@
+---
+title: Configuration Overview
+description: Learn how to configure Crush with JSON configuration files
+---
+
+Crush runs great with no configuration. That said, if you do need or want to customize Crush, you can use JSON configuration files to control behavior, providers, integrations, and more.
+
+## Configuration File Locations
+
+Crush loads configuration files with the following priority:
+
+1. `.crush.json` - Hidden project-specific configuration
+2. `crush.json` - Project-specific configuration
+3. `$HOME/.config/crush/crush.json` - User global configuration (Unix/Linux/macOS)
+4. `%LOCALAPPDATA%\crush\crush.json` - User global configuration (Windows)
+
+<Note>
+Project-specific configuration (`.crush.json` or `crush.json`) takes precedence over global configuration. Settings from multiple files are merged, with more specific files overriding global settings.
+</Note>
+
+## Configuration Format
+
+Configuration files use JSON format:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "providers": {
+    "openai": {
+      "api_key": "$OPENAI_API_KEY"
+    }
+  },
+  "options": {
+    "debug": false
+  }
+}
+```
+
+<Tip>
+Include the `$schema` field to enable autocompletion and validation in editors that support JSON Schema.
+</Tip>
+
+## Configuration Schema
+
+Crush provides a JSON Schema at `https://charm.land/crush.json` that describes all available configuration options. You can reference the full schema for all available fields and their descriptions.
+
+Key configuration sections include:
+
+- **providers** - LLM provider configurations (API keys, models, endpoints)
+- **lsp** - Language Server Protocol configurations
+- **mcp** - Model Context Protocol server configurations
+- **options** - General application options (debug mode, paths, features)
+- **permissions** - Tool permission settings
+- **tools** - Tool-specific configurations
+
+## Environment Variables
+
+You can override configuration file locations using environment variables:
+
+### CRUSH_GLOBAL_CONFIG
+
+Override the directory where Crush looks for the global configuration file:
+
+```bash
+export CRUSH_GLOBAL_CONFIG="/custom/path"
+# Crush will load: /custom/path/crush.json
+```
+
+### CRUSH_GLOBAL_DATA
+
+Override the directory where Crush stores application state and ephemeral data:
+
+```bash
+export CRUSH_GLOBAL_DATA="/custom/data/path"
+# Crush will use: /custom/data/path/crush.json
+```
+
+<Info>
+The data directory (`CRUSH_GLOBAL_DATA`) is separate from the configuration directory. It stores ephemeral data like recent models, OAuth tokens, and application state.
+</Info>
+
+## Data Directory
+
+In addition to configuration files, Crush stores ephemeral application data in:
+
+- **Unix/Linux/macOS**: `$HOME/.local/share/crush/crush.json`
+- **Windows**: `%LOCALAPPDATA%\crush\crush.json`
+
+This file contains:
+- Recently used models
+- OAuth tokens for authenticated providers
+- Application state
+
+<Warning>
+Do not manually edit the data directory file. Crush manages this file automatically.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Provider Configuration" icon="server" href="/configuration/providers">
+    Configure LLM providers and API keys
+  </Card>
+  <Card title="LSP Integration" icon="code" href="/configuration/lsp">
+    Set up Language Server Protocol support
+  </Card>
+  <Card title="MCP Servers" icon="plug" href="/configuration/mcp">
+    Add Model Context Protocol servers
+  </Card>
+  <Card title="Permissions" icon="shield" href="/configuration/permissions">
+    Control tool permissions and security
+  </Card>
+</CardGroup>

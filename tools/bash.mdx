@@ -1,0 +1,336 @@
+---
+title: Bash Tool
+description: Execute shell commands with automatic background job support and security safeguards
+---
+
+## Overview
+
+The Bash tool executes shell commands in a Bash-compatible environment. It includes automatic background job conversion for long-running tasks, security restrictions on dangerous commands, and cross-platform compatibility.
+
+## Parameters
+
+<ParamField path="command" type="string" required>
+  The shell command to execute. Can include pipes, redirects, and other shell features.
+</ParamField>
+
+<ParamField path="description" type="string" required>
+  A brief description of what the command does (aim for under 30 characters). Used for permission prompts and job tracking.
+</ParamField>
+
+<ParamField path="working_dir" type="string">
+  The directory to execute the command in. Defaults to the current working directory. Use this instead of `cd` commands.
+</ParamField>
+
+<ParamField path="run_in_background" type="boolean">
+  Set to `true` to explicitly run the command as a background job. Defaults to `false`.
+</ParamField>
+
+## Features
+
+### Cross-Platform Compatibility
+
+Crush uses the [mvdan/sh](https://github.com/mvdan/sh) interpreter, which provides Bash-compatible shell execution on all platforms including Windows. This means:
+
+- Common shell builtins work everywhere (`cd`, `echo`, `export`, etc.)
+- Core utilities are available on Windows
+- Use forward slashes for paths: `ls C:/foo/bar` not `ls C:\\foo\\bar`
+
+### Automatic Background Jobs
+
+Commands that take longer than 1 minute are automatically converted to background jobs:
+
+1. **Command starts** and begins executing
+2. **After 1 minute** if still running, Crush moves it to the background
+3. **Shell ID returned** for tracking the job
+4. **Use `job_output` tool** to view current output
+5. **Use `job_kill` tool** to terminate the job
+
+### Explicit Background Execution
+
+You can explicitly run commands in the background with `run_in_background: true`:
+
+```json
+{
+  "command": "npm start",
+  "description": "Start development server",
+  "run_in_background": true
+}
+```
+
+**Commands that should run in background:**
+- Long-running servers (`npm start`, `python -m http.server`)
+- Watch/monitoring tasks (`npm run watch`, `tail -f logfile`)
+- Continuous processes that don't exit on their own
+
+**Commands that should NOT run in background:**
+- Build commands (`npm run build`, `go build`)
+- Test suites (`npm test`, `pytest`)
+- Git operations
+- File operations
+- Short-lived scripts
+
+### Security Restrictions
+
+The Bash tool blocks dangerous commands to protect your system:
+
+#### Banned Commands
+
+**Network/Download tools:**
+- `curl`, `wget`, `ssh`, `scp`, `nc`, `telnet`
+- Browsers: `chrome`, `firefox`, `safari`
+
+**System administration:**
+- `sudo`, `su`, `doas`
+
+**Package managers:**
+- System: `apt`, `yum`, `dnf`, `pacman`, `brew`
+- Language-specific global installs: `npm install -g`, `pip install --user`
+
+**System modification:**
+- `mount`, `umount`, `fdisk`, `systemctl`
+- `crontab`, `firewall-cmd`, `iptables`
+
+#### Command-Specific Restrictions
+
+Some commands are allowed but with restrictions:
+- `go test -exec` is blocked (can run arbitrary commands)
+- `npm install --global` is blocked
+- `pip install --user` is blocked
+
+#### Safe Read-Only Commands
+
+These commands execute without permission prompts:
+- `git status`, `git log`, `git diff`
+- `ls`, `pwd`, `which`
+- `cat`, `head`, `tail` (though View tool is preferred)
+- `grep` (though Grep tool is preferred)
+
+## Output Handling
+
+### Truncation
+
+Output is truncated if it exceeds 30,000 characters:
+- First 15,000 characters are shown
+- Middle section is truncated with a note
+- Last 15,000 characters are shown
+
+### Working Directory
+
+The current working directory is included in the output:
+
+```xml
+<cwd>/path/to/directory</cwd>
+```
+
+This helps the LLM track the current location.
+
+## Usage Examples
+
+### Basic Command Execution
+
+```json
+{
+  "command": "git status",
+  "description": "Check git status"
+}
+```
+
+### Using Working Directory
+
+```json
+{
+  "command": "pytest tests/",
+  "description": "Run tests",
+  "working_dir": "/path/to/project"
+}
+```
+
+**Good:** Use `working_dir` parameter
+```json
+{
+  "command": "pytest tests",
+  "working_dir": "/foo/bar"
+}
+```
+
+**Bad:** Use `cd` command
+```json
+{
+  "command": "cd /foo/bar && pytest tests"
+}
+```
+
+### Background Job
+
+```json
+{
+  "command": "npm start",
+  "description": "Start dev server",
+  "run_in_background": true
+}
+```
+
+### Command Chaining
+
+```json
+{
+  "command": "mkdir -p dist && cp src/* dist/",
+  "description": "Copy files to dist"
+}
+```
+
+Use:
+- `&&` - Run next command only if previous succeeds
+- `;` - Run next command regardless of previous result
+- `||` - Run next command only if previous fails
+
+## Git Operations
+
+The Bash tool has special handling for Git operations:
+
+### Creating Commits
+
+When creating commits, follow this workflow:
+
+1. **Check status** in parallel:
+   ```json
+   [
+     {"command": "git status", "description": "Check status"},
+     {"command": "git diff", "description": "Check changes"},
+     {"command": "git log -5 --oneline", "description": "Check recent commits"}
+   ]
+   ```
+
+2. **Stage files:**
+   ```json
+   {"command": "git add src/", "description": "Stage changes"}
+   ```
+
+3. **Create commit with HEREDOC:**
+   ```bash
+   git commit -m "$(cat <<'EOF'
+   feat: add new feature
+   
+   Detailed description here.
+   EOF
+   )"
+   ```
+
+### Creating Pull Requests
+
+Use the `gh` CLI for GitHub operations:
+
+```bash
+gh pr create --title "Fix bug" --body "$(cat <<'EOF'
+## Summary
+- Fixed the authentication bug
+- Updated tests
+
+## Test plan
+- [x] Unit tests pass
+- [x] Manual testing completed
+EOF
+)"
+```
+
+## Best Practices
+
+### Command Design
+
+1. **Use absolute paths** when possible
+2. **Quote paths with spaces** using double quotes
+3. **Provide descriptive descriptions** for permission prompts
+4. **Chain related operations** with `&&`
+5. **Avoid interactive commands** (they won't work)
+
+### Tool Selection
+
+1. **Prefer specialized tools:**
+   - Use View instead of `cat`
+   - Use Grep instead of `grep` or `rg`
+   - Use Glob instead of `find`
+   - Use LS instead of `ls`
+
+2. **Use Bash for:**
+   - Build commands (`npm run build`, `go build`)
+   - Test execution (`pytest`, `npm test`)
+   - Git operations
+   - Package management within project (`npm install`, not `npm install -g`)
+
+### Error Handling
+
+Commands return:
+- **Exit code** for non-zero exits
+- **stderr** output if present
+- **Interrupted status** if cancelled
+
+Handle errors gracefully:
+```json
+{
+  "command": "npm test || echo 'Tests failed'",
+  "description": "Run tests"
+}
+```
+
+## Permissions
+
+The Bash tool requires permission for:
+- **All commands except safe read-only ones**
+- **Commands outside the working directory**
+- **Potentially destructive operations**
+
+You can pre-approve Bash tool usage:
+
+```json
+{
+  "allow": {
+    "bash": ["~/projects/myapp"]
+  }
+}
+```
+
+## Platform-Specific Notes
+
+### Windows
+
+- Use forward slashes: `C:/Users/name/file.txt`
+- Core utilities available via mvdan/sh
+- PowerShell-specific commands not available
+- Use `cmd /c` prefix for Windows-specific commands if needed
+
+### Unix/Linux/macOS
+
+- Standard Bash behavior
+- All common utilities available
+- Shell builtins work as expected
+
+## Troubleshooting
+
+### Command Not Found
+
+If a command is not found:
+1. Check if it's in your PATH
+2. Use absolute path to the executable
+3. Verify the command is installed
+
+### Command Blocked
+
+If a command is blocked:
+1. Check the banned commands list
+2. Consider if there's an alternative approach
+3. Use a specialized tool if available
+4. For package management, use project-local installs
+
+### Background Job Issues
+
+If a background job isn't working:
+1. Don't use `&` at the end - use `run_in_background: true`
+2. Check job output with `job_output` tool
+3. Terminate with `job_kill` if needed
+
+### Permission Denied
+
+If permission is denied:
+1. Approve the permission prompt
+2. Add to allow list if it's a trusted operation
+3. Check if the command is trying to write outside allowed areas

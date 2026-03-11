@@ -1,0 +1,371 @@
+---
+title: 'Air-Gapped Environments'
+description: 'Run Crush in restricted network environments without automatic updates'
+icon: 'shield'
+---
+
+Crush is designed to work in air-gapped or restricted network environments where internet access is limited or prohibited. This guide covers how to disable automatic provider updates and manage provider data manually.
+
+## Provider Auto-Updates
+
+By default, Crush automatically checks for the latest provider and model information from [Catwalk](https://github.com/charmbracelet/catwalk), Crush's open-source provider database. This ensures you always have:
+
+- The latest model offerings
+- Up-to-date pricing information
+- New provider support
+- Correct model metadata
+
+However, in air-gapped environments, this automatic updating may not be desirable or possible.
+
+## Disabling Provider Auto-Updates
+
+There are two ways to disable automatic provider updates:
+
+### Method 1: Configuration File
+
+Add the following to your `crush.json` configuration:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "options": {
+    "disable_provider_auto_update": true
+  }
+}
+```
+
+This setting applies to:
+
+- Local project configuration (`.crush.json` or `crush.json`)
+- Global user configuration (`~/.config/crush/crush.json`)
+
+<Note>
+Project-level configuration takes precedence over global configuration.
+</Note>
+
+### Method 2: Environment Variable
+
+Set the `CRUSH_DISABLE_PROVIDER_AUTO_UPDATE` environment variable:
+
+<CodeGroup>
+```bash Unix/Linux/macOS
+export CRUSH_DISABLE_PROVIDER_AUTO_UPDATE=1
+```
+
+```powershell Windows PowerShell
+$env:CRUSH_DISABLE_PROVIDER_AUTO_UPDATE=1
+```
+</CodeGroup>
+
+<Tip>
+The environment variable takes precedence over the configuration file setting.
+</Tip>
+
+### Permanent Configuration
+
+To make the environment variable permanent:
+
+<CodeGroup>
+```bash Unix/Linux/macOS (bash/zsh)
+# Add to ~/.bashrc or ~/.zshrc
+echo 'export CRUSH_DISABLE_PROVIDER_AUTO_UPDATE=1' >> ~/.bashrc
+source ~/.bashrc
+```
+
+```powershell Windows PowerShell (Permanent)
+[System.Environment]::SetEnvironmentVariable(
+  'CRUSH_DISABLE_PROVIDER_AUTO_UPDATE',
+  '1',
+  [System.EnvironmentVariableTarget]::User
+)
+```
+</CodeGroup>
+
+## Manual Provider Updates
+
+Even with auto-updates disabled, you can manually update provider information using the `crush update-providers` command.
+
+### Update from Remote (Catwalk)
+
+Update providers from the default Catwalk repository:
+
+```bash
+crush update-providers
+```
+
+This requires internet access to reach Catwalk's provider database.
+
+### Update from Custom URL
+
+Update providers from a custom base URL:
+
+```bash
+crush update-providers https://example.com/providers/
+```
+
+This is useful when:
+
+- You have an internal mirror of Catwalk
+- Your organization maintains a custom provider database
+- You need to use a proxy or gateway
+
+### Update from Local File
+
+Update providers from a local JSON file:
+
+```bash
+crush update-providers /path/to/local-providers.json
+```
+
+This is ideal for air-gapped environments where you:
+
+1. Download the provider data on a machine with internet access
+2. Transfer the file to the air-gapped environment
+3. Manually update Crush
+
+### Reset to Embedded Version
+
+Reset providers to the version embedded in Crush at build time:
+
+```bash
+crush update-providers embedded
+```
+
+This is useful when:
+
+- You want a known, stable provider configuration
+- Custom updates caused issues
+- You're reverting to a clean state
+
+<Note>
+The embedded version is the provider snapshot from when your Crush binary was built and may be outdated.
+</Note>
+
+## Local Provider Files
+
+When you update providers manually, Crush stores the provider data locally:
+
+### Unix/Linux/macOS
+
+```
+~/.local/share/crush/providers.json
+```
+
+### Windows
+
+```
+%LOCALAPPDATA%\crush\providers.json
+```
+
+This file contains:
+
+- All provider configurations
+- Model metadata (context windows, pricing, capabilities)
+- Provider API endpoints
+
+<Warning>
+Manually editing `providers.json` is not recommended. Use the configuration file to add custom providers instead.
+</Warning>
+
+## Embedded Provider Version
+
+Crush includes a provider snapshot embedded at build time. This ensures basic functionality even without any provider updates:
+
+- **Always available**: No network required
+- **Stable**: Doesn't change unless you update Crush
+- **May be outdated**: Doesn't include recent providers or model updates
+
+To use the embedded version:
+
+```bash
+crush update-providers embedded
+```
+
+## Restricted Internet Access Considerations
+
+### Minimal Network Requirements
+
+If you disable provider auto-updates, Crush requires network access only for:
+
+- **API calls to LLM providers** (e.g., OpenAI, Anthropic, etc.)
+- **MCP server communication** (if using HTTP/SSE-based MCP servers)
+
+Crush does **NOT** require:
+
+- Access to Catwalk (provider database)
+- Telemetry endpoints (if metrics are disabled)
+- GitHub or other external services
+
+### Firewall Configuration
+
+For air-gapped environments, allow outbound connections to:
+
+1. Your LLM provider's API endpoint (e.g., `api.anthropic.com`, `api.openai.com`)
+2. Any custom provider endpoints you've configured
+3. Local model servers (e.g., Ollama on `localhost:11434`)
+
+### Proxy Configuration
+
+If using a proxy, set standard environment variables:
+
+<CodeGroup>
+```bash Unix/Linux/macOS
+export HTTP_PROXY="http://proxy.company.com:8080"
+export HTTPS_PROXY="http://proxy.company.com:8080"
+export NO_PROXY="localhost,127.0.0.1"
+```
+
+```powershell Windows PowerShell
+$env:HTTP_PROXY="http://proxy.company.com:8080"
+$env:HTTPS_PROXY="http://proxy.company.com:8080"
+$env:NO_PROXY="localhost,127.0.0.1"
+```
+</CodeGroup>
+
+## Working Completely Offline
+
+To use Crush in a completely offline environment:
+
+1. **Disable provider auto-updates**:
+   ```json
+   {"options": {"disable_provider_auto_update": true}}
+   ```
+
+2. **Use local models** (Ollama or LM Studio):
+   ```json
+   {
+     "providers": {
+       "ollama": {
+         "base_url": "http://localhost:11434/v1/",
+         "type": "openai-compat",
+         "models": [/* ... */]
+       }
+     }
+   }
+   ```
+
+3. **Disable metrics collection**:
+   ```json
+   {"options": {"disable_metrics": true}}
+   ```
+   Or:
+   ```bash
+   export CRUSH_DISABLE_METRICS=1
+   ```
+
+With this configuration, Crush will work entirely offline using local models.
+
+## Updating Provider Data in Air-Gapped Environments
+
+### Workflow
+
+1. **On a machine with internet access**:
+   ```bash
+   # Download latest provider data
+   curl -o providers.json https://providers.catwalk.charm.sh/latest/providers.json
+   ```
+
+2. **Transfer the file** to your air-gapped environment (USB drive, internal network, etc.)
+
+3. **On the air-gapped machine**:
+   ```bash
+   # Update providers from local file
+   crush update-providers /path/to/providers.json
+   ```
+
+<Tip>
+Schedule periodic provider updates (e.g., monthly) to keep model information reasonably current without enabling auto-updates.
+</Tip>
+
+## Troubleshooting
+
+### Auto-Updates Still Happening
+
+If Crush still attempts to update providers:
+
+1. Verify `disable_provider_auto_update` is set to `true` in your configuration
+2. Check that `CRUSH_DISABLE_PROVIDER_AUTO_UPDATE` environment variable is set
+3. Ensure you're using the correct configuration file (check precedence)
+4. Restart Crush to reload configuration
+
+### Cannot Update Providers Manually
+
+If manual updates fail:
+
+1. Check file permissions on the providers file location
+2. Verify the provider JSON file is valid JSON
+3. Ensure you have write access to `~/.local/share/crush/` (Unix) or `%LOCALAPPDATA%\crush\` (Windows)
+
+### Provider Data Seems Outdated
+
+If your providers are outdated:
+
+1. Run `crush update-providers` to manually update
+2. Verify internet access (if updating from remote)
+3. Check if you're using the embedded version (consider updating)
+
+### No Providers Available
+
+If Crush shows no providers:
+
+1. Reset to embedded version: `crush update-providers embedded`
+2. Check if provider file exists and is readable
+3. Try updating from a known-good provider JSON file
+
+## Best Practices
+
+1. **Document your configuration**: Keep notes on disabled features and manual update procedures
+2. **Test in isolation**: Verify Crush works in your restricted environment before deployment
+3. **Plan update cycles**: Establish a schedule for manual provider updates
+4. **Use local models when possible**: Reduces external dependencies
+5. **Keep Crush updated**: Newer versions may include better embedded provider data
+6. **Monitor provider changes**: Subscribe to Catwalk updates to know when manual updates are needed
+
+## Security Considerations
+
+### Provider Data Integrity
+
+When manually updating providers:
+
+- **Verify source authenticity**: Only download from trusted sources
+- **Check file integrity**: Use checksums when available
+- **Review changes**: Inspect provider data before applying updates
+
+### Credential Management
+
+In restricted environments:
+
+- **Use environment variables** for API keys
+- **Restrict config file permissions**: `chmod 600 crush.json`
+- **Audit access logs**: Monitor who accesses Crush configuration
+- **Rotate credentials**: Especially after personnel changes
+
+## Command Reference
+
+```bash
+# View update-providers help
+crush update-providers --help
+
+# Update from default remote
+crush update-providers
+
+# Update from custom URL
+crush update-providers https://custom.example.com/
+
+# Update from local file
+crush update-providers /path/to/providers.json
+
+# Reset to embedded version
+crush update-providers embedded
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Local Models" icon="computer" href="/advanced/local-models">
+    Set up local models for completely offline operation
+  </Card>
+  <Card title="Custom Providers" icon="code" href="/advanced/custom-providers">
+    Configure custom API providers
+  </Card>
+</CardGroup>

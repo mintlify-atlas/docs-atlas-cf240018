@@ -1,0 +1,385 @@
+---
+title: Permissions Configuration
+description: Configure tool permissions and security settings in Crush
+---
+
+By default, Crush asks for permission before running tool calls. You can configure which tools are allowed to run without prompting, or disable tools entirely for security.
+
+## Permission Prompts
+
+When Crush wants to use a tool, it will prompt you for permission:
+
+```
+Crush wants to run: bash
+Command: npm install lodash
+
+Allow? [y/n/always]
+```
+
+You can:
+- **y** - Allow this specific tool call
+- **n** - Deny this tool call
+- **always** - Always allow this tool without prompting
+
+## Allowing Tools
+
+To allow specific tools without permission prompts, add them to `allowed_tools`:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "permissions": {
+    "allowed_tools": [
+      "view",
+      "ls",
+      "grep",
+      "edit"
+    ]
+  }
+}
+```
+
+<Warning>
+Use `allowed_tools` with care. Allowing tools like `bash` without prompts can be dangerous.
+</Warning>
+
+### Read-Only Tools
+
+Safe read-only tools you might want to allow:
+
+```json
+{
+  "permissions": {
+    "allowed_tools": [
+      "view",
+      "ls",
+      "grep",
+      "glob",
+      "sourcegraph"
+    ]
+  }
+}
+```
+
+These tools only read files and don't make changes to your system.
+
+### Safe Edit Tools
+
+If you trust Crush to make edits:
+
+```json
+{
+  "permissions": {
+    "allowed_tools": [
+      "view",
+      "ls",
+      "grep",
+      "edit",
+      "write",
+      "multiedit"
+    ]
+  }
+}
+```
+
+### Including MCP Tools
+
+Allow specific MCP tools by their prefixed name:
+
+```json
+{
+  "permissions": {
+    "allowed_tools": [
+      "view",
+      "grep",
+      "mcp_context7_get-library-doc"
+    ]
+  }
+}
+```
+
+MCP tool names follow the pattern: `mcp_{server-name}_{tool-name}`
+
+## YOLO Mode
+
+For maximum productivity (and minimum safety), use the `--yolo` flag to skip all permission prompts:
+
+```bash
+crush --yolo
+```
+
+<Warning>
+**Be very, very careful with YOLO mode.**
+
+In YOLO mode:
+- Crush can run any tool without asking
+- No confirmation for destructive operations
+- No safety net for mistakes
+
+Only use in trusted environments with version control.
+</Warning>
+
+### When to Use YOLO Mode
+
+✅ Safe scenarios:
+- Working in a throwaway development environment
+- Everything is in version control
+- Testing or experimentation
+- You're watching what Crush does
+
+❌ Unsafe scenarios:
+- Production systems
+- Unversioned code
+- Shared environments
+- When you're not paying attention
+
+## Disabling Built-In Tools
+
+Completely disable tools by adding them to `disabled_tools`:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "options": {
+    "disabled_tools": [
+      "bash",
+      "sourcegraph"
+    ]
+  }
+}
+```
+
+<Info>
+Disabled tools are completely hidden from the agent. Crush won't even know they exist.
+</Info>
+
+### Available Tools to Disable
+
+Built-in tools you can disable:
+
+- `agent` - Launch sub-agents
+- `bash` - Execute shell commands
+- `job_output` - Get background job output
+- `job_kill` - Kill background jobs
+- `download` - Download files from URLs
+- `edit` - Edit files
+- `multiedit` - Edit multiple files
+- `lsp_diagnostics` - Get LSP diagnostics
+- `lsp_references` - Find LSP references
+- `lsp_restart` - Restart LSP servers
+- `fetch` - Fetch web content
+- `agentic_fetch` - Agentic web browsing
+- `glob` - Find files by pattern
+- `grep` - Search file contents
+- `ls` - List directory contents
+- `sourcegraph` - Search with Sourcegraph
+- `todos` - Manage todo items
+- `view` - Read files
+- `write` - Write files
+- `list_mcp_resources` - List MCP resources
+- `read_mcp_resource` - Read MCP resources
+
+### Disabling Dangerous Tools
+
+For maximum safety, disable potentially dangerous tools:
+
+```json
+{
+  "options": {
+    "disabled_tools": [
+      "bash",
+      "job_output",
+      "job_kill",
+      "download"
+    ]
+  }
+}
+```
+
+### Read-Only Mode
+
+To make Crush read-only, disable all write tools:
+
+```json
+{
+  "options": {
+    "disabled_tools": [
+      "bash",
+      "edit",
+      "multiedit",
+      "write",
+      "download",
+      "job_output",
+      "job_kill"
+    ]
+  }
+}
+```
+
+Crush can still:
+- Read files (`view`)
+- Search files (`grep`, `glob`)
+- List directories (`ls`)
+- Use LSP for code intelligence
+- Answer questions about your code
+
+## Disabling MCP Tools
+
+Disable specific tools from MCP servers:
+
+```json
+{
+  "mcp": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "disabled_tools": [
+        "create_issue",
+        "create_pull_request",
+        "delete_repository"
+      ]
+    }
+  }
+}
+```
+
+See the [MCP Configuration](/configuration/mcp) page for more details.
+
+## Security Best Practices
+
+### 1. Start Restrictive
+
+Begin with minimal permissions and add tools as needed:
+
+```json
+{
+  "permissions": {
+    "allowed_tools": [
+      "view",
+      "ls",
+      "grep"
+    ]
+  }
+}
+```
+
+### 2. Use Version Control
+
+Always use version control (Git) so you can review and revert changes:
+
+```bash
+git status
+git diff
+git checkout -- file.js  # Revert unwanted changes
+```
+
+### 3. Review Changes
+
+Before committing, review what Crush changed:
+
+```bash
+git diff
+crush diff  # If Crush provides a diff command
+```
+
+### 4. Project-Specific Permissions
+
+Use project-specific `.crush.json` for sensitive projects:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "permissions": {
+    "allowed_tools": ["view", "grep", "ls"]
+  },
+  "options": {
+    "disabled_tools": ["bash", "download"]
+  }
+}
+```
+
+### 5. Audit Logs
+
+Enable debug logging to audit what Crush does:
+
+```json
+{
+  "options": {
+    "debug": true
+  }
+}
+```
+
+Logs are saved to `./.crush/logs/crush.log`.
+
+## Permission Levels
+
+Here are recommended permission levels for different scenarios:
+
+### Level 1: Maximum Security (Read-Only)
+
+```json
+{
+  "permissions": {
+    "allowed_tools": ["view", "ls", "grep", "glob"]
+  },
+  "options": {
+    "disabled_tools": ["bash", "edit", "write", "multiedit", "download"]
+  }
+}
+```
+
+Use for: Production analysis, sensitive codebases
+
+### Level 2: Moderate Security (Safe Edits)
+
+```json
+{
+  "permissions": {
+    "allowed_tools": ["view", "ls", "grep", "glob", "edit", "write"]
+  },
+  "options": {
+    "disabled_tools": ["bash", "download"]
+  }
+}
+```
+
+Use for: Development with version control
+
+### Level 3: Balanced (Most Tools)
+
+```json
+{
+  "permissions": {
+    "allowed_tools": [
+      "view", "ls", "grep", "glob",
+      "edit", "write", "multiedit"
+    ]
+  }
+}
+```
+
+Use for: Active development, trusted environments
+
+### Level 4: YOLO (Maximum Productivity)
+
+```bash
+crush --yolo
+```
+
+Use for: Throwaway projects, experimentation
+
+<Warning>
+Never use YOLO mode on production systems or code without version control.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tools Overview" icon="wrench" href="/tools/overview">
+    Learn about all available tools
+  </Card>
+  <Card title="MCP Configuration" icon="plug" href="/configuration/mcp">
+    Configure MCP server permissions
+  </Card>
+</CardGroup>

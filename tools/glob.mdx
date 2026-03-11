@@ -1,0 +1,418 @@
+---
+title: Glob Tool  
+description: Fast file pattern matching tool for finding files by name or path pattern
+---
+
+## Overview
+
+The Glob tool finds files matching name patterns using glob syntax. Results are sorted by path length (shortest first) to prioritize files in the current directory. It's ideal for discovering files when you know their name pattern.
+
+## Parameters
+
+<ParamField path="pattern" type="string" required>
+  The glob pattern to match against file paths. Supports wildcards and brace expansion.
+</ParamField>
+
+<ParamField path="path" type="string">
+  The directory to search in. Defaults to the current working directory.
+</ParamField>
+
+## Pattern Syntax
+
+### Wildcards
+
+- `*` - Matches any sequence of non-separator characters
+- `**` - Matches any sequence including separators (directory traversal)
+- `?` - Matches any single non-separator character
+- `[abc]` - Matches any character in the brackets
+- `[!abc]` - Matches any character not in the brackets
+- `[a-z]` - Matches any character in the range
+
+### Brace Expansion
+
+- `{a,b,c}` - Matches any of the comma-separated patterns
+- `{*.js,*.ts}` - Matches files ending in .js or .ts
+
+### Examples
+
+```
+*.js                  - JavaScript files in current directory
+**/*.js              - JavaScript files in any subdirectory
+src/**/*.{ts,tsx}    - TypeScript files in src directory
+test_*.py            - Python test files
+**/README.md         - README files anywhere
+config.{json,yaml}   - config.json or config.yaml
+```
+
+## Features
+
+### Gitignore Support
+
+Glob automatically respects:
+- `.gitignore` patterns in the search directory
+- `.crushignore` patterns for additional filtering
+
+Files and directories matching these patterns are skipped.
+
+### Hidden Files
+
+Hidden files (starting with `.`) are automatically skipped to match standard tool behavior.
+
+### Performance
+
+Glob uses:
+- **Ripgrep (rg)** if available for fast file system traversal
+- **Go implementation** as fallback with doublestar matching
+- **Result limit** of 100 files to prevent overwhelming output
+
+### Sorting
+
+Results are sorted by path length (shortest first):
+```
+src/config.js
+src/lib/config.js  
+src/lib/utils/config.js
+```
+
+This prioritizes files closer to the search root.
+
+## Usage Examples
+
+### Find JavaScript Files
+
+```json
+{
+  "pattern": "**/*.js"
+}
+```
+
+Finds all .js files in any subdirectory.
+
+### Find TypeScript Files
+
+```json
+{
+  "pattern": "src/**/*.{ts,tsx}"
+}
+```
+
+Finds TypeScript files in the src directory.
+
+### Find Config Files
+
+```json
+{
+  "pattern": "**/config.{json,yaml,yml}"
+}
+```
+
+Finds config files in any subdirectory.
+
+### Find Test Files
+
+```json
+{
+  "pattern": "**/*test*.{js,ts}"
+}
+```
+
+Finds test files in any subdirectory.
+
+### Find in Specific Directory
+
+```json
+{
+  "pattern": "*.go",
+  "path": "/path/to/project/src"
+}
+```
+
+Finds Go files in specific directory.
+
+## Output Format
+
+Glob returns a list of file paths:
+
+```
+src/main.ts
+src/server.ts  
+src/utils/config.ts
+src/utils/helpers.ts
+```
+
+If results are truncated:
+
+```
+src/main.ts
+src/server.ts
+... (98 more files)
+
+(Results are truncated. Consider using a more specific path or pattern.)
+```
+
+## Common Patterns
+
+### Source Files
+
+```json
+// All Go source files
+{"pattern": "**/*.go"}
+
+// All Python files
+{"pattern": "**/*.py"}
+
+// All JavaScript/TypeScript
+{"pattern": "**/*.{js,jsx,ts,tsx}"}
+
+// All source files in src/
+{"pattern": "src/**/*"}
+```
+
+### Test Files
+
+```json
+// Test files
+{"pattern": "**/*test*"}
+
+// Go test files
+{"pattern": "**/*_test.go"}
+
+// JavaScript test files
+{"pattern": "**/*.{test,spec}.{js,ts}"}
+```
+
+### Configuration Files
+
+```json
+// Config in any format
+{"pattern": "**/config.*"}
+
+// Package manifests
+{"pattern": "**/package.json"}
+
+// Docker files
+{"pattern": "**/Dockerfile*"}
+
+// CI/CD configs
+{"pattern": "**/*.{yml,yaml}"}
+```
+
+### Documentation
+
+```json
+// README files
+{"pattern": "**/README.md"}
+
+// All markdown
+{"pattern": "**/*.md"}
+
+// Docs directory
+{"pattern": "docs/**/*"}
+```
+
+## Best Practices
+
+### Pattern Design
+
+1. **Start specific** - Begin with narrow patterns, broaden if needed
+2. **Use brace expansion** - Combine related extensions
+3. **Anchor patterns** - Use `**/` to search subdirectories explicitly
+4. **Test patterns** - Try simple patterns first, add complexity
+
+### Efficiency
+
+1. **Limit scope** - Search specific directories when possible
+2. **Be specific** - More specific patterns = faster, fewer results
+3. **Use path parameter** - Narrow search to relevant directories
+4. **Check truncation** - Refine pattern if results are truncated
+
+### Workflow Integration
+
+1. **Combine with Grep** - Find files with Glob, search contents with Grep
+2. **Before editing** - Find files to modify
+3. **After changes** - Verify files exist in expected locations
+4. **Project exploration** - Discover file organization
+
+## Permissions
+
+Glob does not require permissions when:
+- Searching within the working directory
+- Reading directory listings
+
+No permission prompts are shown for Glob operations.
+
+## Cross-Platform Notes
+
+### Path Separators
+
+Always use forward slashes `/` in patterns:
+- ✅ `src/**/*.js`
+- ❌ `src\\**\\*.js`
+
+Results use forward slashes on all platforms:
+- Windows: `C:/Users/name/file.js`
+- Unix: `/home/user/file.js`
+
+### Hidden Files
+
+Hidden files (starting with `.`) are skipped on all platforms.
+
+### Case Sensitivity
+
+- **Unix/Linux/macOS** - Case-sensitive matching
+- **Windows** - Case-insensitive matching
+
+Write patterns to work on case-sensitive systems for portability.
+
+## Troubleshooting
+
+### No Files Found
+
+- Check pattern syntax
+- Verify search path exists
+- Check if files are in .gitignore
+- Try simpler pattern (e.g., `*` to see all files)
+- Use LS to verify directory contents
+
+### Too Many Results
+
+- Make pattern more specific
+- Add file extension to pattern  
+- Specify a narrower search path
+- Check if pattern is too broad
+
+### Missing Expected Files
+
+- Check .gitignore and .crushignore
+- Verify files aren't hidden (starting with `.`)
+- Check file extension matches pattern
+- Verify search path is correct
+
+### Performance Issues
+
+- Narrow search with path parameter
+- Make pattern more specific
+- Check if searching very large directories
+- Install ripgrep for better performance
+
+## Glob vs Other Tools
+
+### Glob vs Grep
+
+**Use Glob when:**
+- Finding files by name
+- File path pattern matching
+- Discovering file structure
+- You know the filename pattern
+
+**Use Grep when:**
+- Searching file contents
+- Finding specific code patterns
+- Text pattern matching
+- You know what text to find
+
+### Glob vs LS
+
+**Use Glob when:**
+- Finding files by pattern
+- Searching across subdirectories
+- Specific file extensions
+- File discovery
+
+**Use LS when:**
+- Viewing directory structure
+- Seeing file organization
+- Exploring unfamiliar directories
+- Hierarchical view needed
+
+### Glob vs Bash find
+
+**Use Glob tool:**
+- Respects .gitignore automatically
+- Sorted by path length
+- Integrated into Crush workflow
+- Simple pattern syntax
+- Cross-platform consistent
+
+**Use Bash find:**
+- Complex search criteria
+- File attribute testing (size, time, permissions)
+- Executing actions on results
+- Advanced filtering
+
+## Advanced Patterns
+
+### Exclude Patterns
+
+Glob doesn't support negation directly, but you can:
+
+1. Use .crushignore to exclude patterns
+2. Combine with more specific patterns
+3. Use Grep after Glob for content filtering
+
+### Multiple Extensions
+
+```json
+// TypeScript and JavaScript
+{"pattern": "**/*.{ts,tsx,js,jsx}"}
+
+// Config files
+{"pattern": "**/*.{json,yaml,yml,toml}"}
+
+// Documentation  
+{"pattern": "**/*.{md,txt,rst}"}
+```
+
+### Nested Patterns
+
+```json
+// Test files in src
+{"pattern": "src/**/*test*.{js,ts}"}
+
+// Component files
+{"pattern": "src/components/**/*.{tsx,ts}"}
+
+// Utility files
+{"pattern": "src/{utils,helpers}/**/*.ts"}
+```
+
+### Specific Depths
+
+```json
+// Only top-level JS files
+{"pattern": "*.js"}
+
+// JS files in immediate subdirectories
+{"pattern": "*/*.js"}
+
+// JS files anywhere
+{"pattern": "**/*.js"}
+```
+
+## Common Workflows
+
+### File Discovery
+
+1. **Use Glob** to find files by name pattern
+2. **View files** to understand contents
+3. **Edit or modify** as needed
+
+### Batch Operations
+
+1. **Use Glob** to find all target files
+2. **Iterate through results** with multiple edits
+3. **Verify changes** by viewing files
+
+### Code Navigation
+
+1. **Use Glob** to find implementation files
+2. **Use Grep** to search their contents
+3. **Use View** to read specific files
+4. **Follow imports** with more Glob searches
+
+### Project Structure
+
+1. **Use LS** to see overall structure
+2. **Use Glob** to find specific file types
+3. **Use Grep** to understand usage patterns
+4. **Document findings** for future reference

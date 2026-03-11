@@ -1,0 +1,168 @@
+---
+title: Tools Overview
+description: Understanding how tools work in Crush and how the LLM uses them to interact with your system
+---
+
+## What are Tools?
+
+Tools are the primary mechanism through which Crush's LLM agent interacts with your system. Each tool provides a specific capability, such as reading files, executing commands, or searching code. When you chat with Crush, the LLM decides which tools to use based on your request and the current context.
+
+## Built-in Tools
+
+Crush comes with a comprehensive set of built-in tools for common development tasks:
+
+### File Operations
+- **[View](/tools/view)** - Read file contents with line numbers
+- **[Edit](/tools/edit)** - Make precise text replacements in files
+- **[Write](/tools/write)** - Create new files or overwrite existing ones
+- **[MultiEdit](/tools/multiedit)** - Apply multiple edits to a single file in one operation
+
+### File Discovery
+- **[Grep](/tools/grep)** - Search file contents using regex patterns
+- **[Glob](/tools/glob)** - Find files by name patterns
+- **[LS](/tools/ls)** - List directory contents in a tree structure
+
+### Command Execution
+- **[Bash](/tools/bash)** - Execute shell commands with automatic background job support
+
+## How the LLM Uses Tools
+
+The LLM has been trained to use tools effectively through detailed system prompts. When you make a request:
+
+1. **Context Gathering** - The LLM first uses View, Grep, or Glob to understand the codebase
+2. **Planning** - Based on the context, it plans which files to modify and how
+3. **Execution** - It uses Edit, Write, or Bash tools to make changes
+4. **Verification** - It may read files again or run tests to verify changes
+
+The LLM can call multiple tools in parallel when they don't depend on each other, improving response time.
+
+## Tool Selection Guidelines
+
+The LLM follows these guidelines when selecting tools:
+
+- **Prefer specialized tools over bash commands** - Use View instead of `cat`, Grep instead of `grep`, etc.
+- **Read before writing** - Always use View to read a file before editing it
+- **Use Edit for surgical changes** - When making targeted replacements
+- **Use Write for new files or complete rewrites** - When creating files from scratch
+- **Use MultiEdit for multiple changes** - When making several edits to the same file
+
+## MCP Tools
+
+In addition to built-in tools, Crush supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io), allowing you to extend Crush with custom tools from MCP servers.
+
+### How MCP Tools Work
+
+1. **Configure MCP servers** in your `crush.json` file
+2. **Crush connects** to configured MCP servers on startup
+3. **Tools are registered** with the prefix `mcp_<server>_<tool>`
+4. **The LLM can use them** just like built-in tools
+
+MCP tools are subject to the same permission system as built-in tools.
+
+### Example MCP Configuration
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "filesystem": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/dir"]
+      }
+    }
+  }
+}
+```
+
+## Tool Permissions
+
+Crush includes a permission system to protect your system from unintended changes:
+
+### Auto-Approved Operations
+
+Some operations are automatically approved without prompting:
+- **Safe read-only commands** like `git status`, `ls`, `pwd`
+- **File reads within the working directory**
+- **Directory listings within the working directory**
+
+### Permission Prompts
+
+Crush will prompt for permission when:
+- **Writing or modifying files** (Edit, Write, MultiEdit)
+- **Executing potentially destructive commands** (Bash)
+- **Accessing files outside the working directory**
+- **Using MCP tools**
+
+### Permission Responses
+
+When prompted, you can:
+- **Allow** - Approve the operation once
+- **Allow all** - Approve this operation and all future similar operations
+- **Deny** - Reject the operation
+
+### Allow Lists
+
+You can pre-approve tools for specific paths in your `crush.json`:
+
+```json
+{
+  "allow": {
+    "bash": ["~/projects/myapp"],
+    "edit": ["~/projects/myapp/src"],
+    "write": ["~/projects/myapp/generated"]
+  }
+}
+```
+
+## Disabling Tools
+
+You can disable specific tools if you don't want the LLM to use them:
+
+```json
+{
+  "disabled_tools": ["bash", "write"]
+}
+```
+
+This is useful when:
+- You want to restrict Crush to read-only operations
+- You're working in a sensitive environment
+- You want to control which tools are available for specific projects
+
+## Banned Commands
+
+The Bash tool has a built-in list of banned commands to prevent dangerous operations:
+
+- **Network tools** - `curl`, `wget`, `ssh`, etc.
+- **System administration** - `sudo`, `su`, etc.
+- **Package managers** - `apt`, `brew install`, `npm install -g`, etc.
+- **System modification** - `mount`, `fdisk`, etc.
+
+These restrictions help ensure that Crush operates safely within your development environment.
+
+## Best Practices
+
+### For Users
+
+1. **Review permission prompts carefully** before approving
+2. **Use allow lists** for trusted projects to reduce friction
+3. **Disable unused tools** to minimize attack surface
+4. **Monitor Bash commands** especially when working with unfamiliar code
+
+### For LLM (System Prompts)
+
+1. **Always read before editing** to understand current state
+2. **Use parallel tool calls** when operations are independent
+3. **Provide context in descriptions** for permission prompts
+4. **Handle errors gracefully** and retry with corrections
+5. **Verify changes** after making them
+
+## Tool Output Format
+
+All tools return structured output that includes:
+
+- **Content** - The main result (file contents, command output, etc.)
+- **Metadata** - Additional information (line counts, file paths, etc.)
+- **Diagnostics** - LSP diagnostics for code files (errors, warnings)
+
+This structured output helps the LLM understand the results and make informed decisions about next steps.

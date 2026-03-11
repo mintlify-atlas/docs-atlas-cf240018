@@ -1,0 +1,120 @@
+---
+title: "What is Crush?"
+description: "Your new coding bestie, now available in your favorite terminal. Your tools, your code, and your workflows, wired into your LLM of choice."
+---
+
+## Overview
+
+Crush is a terminal-based AI coding assistant built by [Charm](https://charm.land) that connects to Large Language Models (LLMs) and gives them powerful tools to read, write, and execute code. Unlike web-based coding assistants, Crush lives directly in your terminal and integrates seamlessly with your existing development workflow.
+
+<Note>
+  Crush is built on the Charm ecosystem, which powers over 25,000 applications—from leading open source projects to business-critical infrastructure.
+</Note>
+
+## What problems does Crush solve?
+
+Modern AI coding assistants are powerful, but they often lack deep integration with your development environment and workflows. Crush bridges this gap by:
+
+- **Bringing AI to your terminal**: Work where you already code, without switching contexts
+- **Understanding your codebase**: Uses Language Server Protocols (LSPs) for code intelligence, just like your editor
+- **Maintaining context**: Session-based conversations that remember your project structure and coding patterns
+- **Extending capabilities**: Add custom tools via Model Context Protocol (MCP) servers and Agent Skills
+- **Working everywhere**: First-class support across macOS, Linux, Windows (PowerShell and WSL), Android, FreeBSD, OpenBSD, and NetBSD
+
+## Key capabilities and features
+
+<CardGroup cols={2}>
+  <Card title="Multi-Model Support" icon="brain">
+    Choose from a wide range of LLMs including Anthropic Claude, OpenAI GPT, Google Gemini, Amazon Bedrock, GitHub Copilot, and many more. Add your own via OpenAI- or Anthropic-compatible APIs.
+  </Card>
+  
+  <Card title="Flexible Model Switching" icon="shuffle">
+    Switch between different LLMs mid-session while preserving your conversation context and project state.
+  </Card>
+  
+  <Card title="Session-Based Workflow" icon="clock-rotate-left">
+    Maintain multiple named sessions per project. Resume conversations exactly where you left off.
+  </Card>
+  
+  <Card title="LSP-Enhanced Intelligence" icon="code">
+    Crush uses Language Server Protocols for additional context, giving it the same code understanding as your IDE.
+  </Card>
+  
+  <Card title="Extensible via MCP" icon="puzzle-piece">
+    Add capabilities through Model Context Protocol servers via `http`, `stdio`, and `sse` transport types.
+  </Card>
+  
+  <Card title="Agent Skills" icon="graduation-cap">
+    Extend Crush with reusable skill packages using the [Agent Skills](https://agentskills.io) open standard.
+  </Card>
+</CardGroup>
+
+## Architecture overview
+
+Crush is designed with a modular architecture that separates concerns and enables extensibility:
+
+### Terminal application
+
+Crush provides a beautiful terminal user interface (TUI) built with [Bubble Tea](https://github.com/charmbracelet/bubbletea), the same framework powering thousands of terminal applications. The interface includes:
+
+- Real-time message streaming with markdown rendering
+- Interactive tool permission prompts
+- Session management and history
+- Model switching and configuration
+
+### LLM integration
+
+Crush connects to LLM providers through a unified abstraction layer that handles:
+
+- Multiple provider protocols (OpenAI-compatible, Anthropic, Gemini, Bedrock, etc.)
+- Streaming responses
+- Token counting and cost tracking
+- Model capabilities detection (reasoning, attachments, etc.)
+
+### Tools system
+
+Crush provides the LLM with a rich set of built-in tools:
+
+- **File operations**: `view`, `edit`, `write`, `multiedit`, `ls`, `glob`, `grep`
+- **Code execution**: `bash` (with background job support)
+- **Code intelligence**: LSP integration for diagnostics, references, and symbols
+- **Web access**: `fetch`, `download`
+- **MCP integration**: Dynamic tool loading from MCP servers
+
+Tools can be allowed automatically via configuration or require user permission per invocation.
+
+### Code intelligence layer
+
+Crush integrates with Language Server Protocols to provide:
+
+- Code diagnostics and error detection
+- Symbol definitions and references
+- Type information and hover documentation
+- Auto-discovery of LSP servers for common languages
+
+## Who should use Crush?
+
+Crush is ideal for:
+
+- **Terminal-first developers** who prefer keyboard-driven workflows
+- **Teams working with multiple LLMs** who want to compare model performance
+- **Projects requiring code intelligence** where LSP integration provides value
+- **Developers needing extensibility** through MCP servers or custom skills
+- **Anyone seeking privacy** with support for local models via Ollama or LM Studio
+- **Organizations with specific compliance needs** who can use self-hosted or air-gapped deployments
+
+<Warning>
+  Productivity may increase when using Crush and you may find yourself nerd sniped when first using the application. If the symptoms persist, join the [Discord](https://charm.land/discord) and nerd snipe the rest of us.
+</Warning>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Install Crush" icon="download" href="/installation">
+    Get Crush installed on your system using your preferred package manager
+  </Card>
+  
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Complete your first AI-assisted coding session in under 5 minutes
+  </Card>
+</CardGroup>

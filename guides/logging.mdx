@@ -1,0 +1,330 @@
+---
+title: "Logging"
+description: "View and debug Crush logs for troubleshooting and monitoring"
+---
+
+## Log File Location
+
+Crush logs all activity to a file located at:
+
+```
+./.crush/logs/crush.log
+```
+
+This path is relative to your project directory (where you run `crush`). Each project maintains its own separate log file.
+
+## Viewing Logs
+
+Crush provides a convenient `logs` command to view log output:
+
+### Basic Usage
+
+```bash
+# View the last 1000 lines (default)
+crush logs
+```
+
+### View Specific Number of Lines
+
+Use the `--tail` (or `-t`) flag to specify how many lines to show:
+
+```bash
+# Show last 500 lines
+crush logs --tail 500
+
+# Show last 100 lines
+crush logs -t 100
+```
+
+### Follow Logs in Real-Time
+
+Use the `--follow` (or `-f`) flag to stream logs as they're written:
+
+```bash
+# Follow logs (like tail -f)
+crush logs --follow
+
+# Follow with custom tail length
+crush logs --follow --tail 200
+```
+
+Press `Ctrl+C` to stop following.
+
+## Log Format
+
+Logs are written in JSON format and rendered with timestamps and colors when viewed through `crush logs`. Each log entry includes:
+
+- **Timestamp**: When the event occurred
+- **Level**: Log level (`INFO`, `DEBUG`, `WARN`, `ERROR`)
+- **Message**: Human-readable description
+- **Additional fields**: Context-specific data (session ID, file paths, etc.)
+
+### Example Log Output
+
+```
+2025-03-11 14:32:15 INFO  Session created
+2025-03-11 14:32:18 DEBUG Loading context files path=AGENTS.md
+2025-03-11 14:32:18 INFO  Prompt sent provider=anthropic model=claude-sonnet-4
+2025-03-11 14:32:23 INFO  Prompt responded duration=4.8s tokens=1523
+```
+
+## Debug Mode
+
+Debug mode enables more verbose logging, which is helpful for troubleshooting issues.
+
+### Enable with Flag
+
+Run Crush with the `--debug` (or `-d`) flag:
+
+```bash
+crush --debug
+```
+
+### Enable in Configuration
+
+Add the `debug` option to your `crush.json`:
+
+```json
+{
+  "options": {
+    "debug": true
+  }
+}
+```
+
+This enables debug logging for all future Crush sessions in this project.
+
+### What Debug Mode Logs
+
+Debug mode captures additional information:
+
+- LSP server communication details
+- MCP server interactions
+- Tool execution details
+- Configuration loading steps
+- File system operations
+- Provider API request/response metadata
+
+<Warning>
+  Debug logs can be very verbose and may include sensitive information like file paths. Be careful when sharing debug logs.
+</Warning>
+
+## LSP Debug Logging
+
+For even more detailed LSP (Language Server Protocol) logging, use the `debug_lsp` option:
+
+```json
+{
+  "options": {
+    "debug": true,
+    "debug_lsp": true
+  }
+}
+```
+
+This logs:
+
+- LSP initialization requests and responses
+- LSP method calls and results
+- LSP server startup and shutdown
+- LSP diagnostics and errors
+
+**When to use LSP debug logging:**
+
+- Troubleshooting LSP server issues
+- Debugging language-specific code intelligence problems
+- Investigating slow LSP performance
+
+## Reading and Interpreting Logs
+
+### Log Levels
+
+- **INFO**: Normal operation events (session created, prompt sent, etc.)
+- **DEBUG**: Detailed diagnostic information (only visible in debug mode)
+- **WARN**: Warning conditions that don't prevent operation
+- **ERROR**: Error conditions that may affect functionality
+
+### Common Log Patterns
+
+#### Successful Session Flow
+
+```
+INFO  Session created
+DEBUG Loading context files
+INFO  Prompt sent
+INFO  Prompt responded duration=3.2s
+INFO  Tool call: bash command="ls -la"
+INFO  Tool result: success
+```
+
+#### Provider Connection Issues
+
+```
+ERROR Failed to connect to provider provider=openai error="connection timeout"
+WARN  Retrying request attempt=1/3
+INFO  Successfully connected to provider provider=openai
+```
+
+#### LSP Server Startup
+
+```
+DEBUG Starting LSP server language=go command=gopls
+INFO  LSP server initialized language=go
+DEBUG LSP diagnostics received file=main.go count=2
+```
+
+## Log File Management
+
+### Log Rotation
+
+Crush does not automatically rotate log files. For long-running projects:
+
+```bash
+# Manually archive old logs
+mv .crush/logs/crush.log .crush/logs/crush.log.old
+
+# Or compress them
+gzip .crush/logs/crush.log
+```
+
+### Clearing Logs
+
+To clear logs:
+
+```bash
+# Delete the log file
+rm .crush/logs/crush.log
+
+# Or truncate it
+truncate -s 0 .crush/logs/crush.log
+```
+
+A new log file will be created automatically on the next Crush run.
+
+### Log File Size
+
+Log files can grow large over time, especially with debug mode enabled. Monitor disk usage:
+
+```bash
+# Check log file size
+du -h .crush/logs/crush.log
+
+# View all Crush data directory size
+du -sh .crush
+```
+
+## Troubleshooting with Logs
+
+### Provider Authentication Issues
+
+Look for:
+
+```
+ERROR Failed to connect to provider provider=openai error="401 Unauthorized"
+```
+
+**Solution**: Check your API key configuration.
+
+### Tool Execution Failures
+
+Look for:
+
+```
+ERROR Tool execution failed tool=bash error="command not found: gopls"
+```
+
+**Solution**: Ensure required tools are installed and in your `PATH`.
+
+### LSP Server Crashes
+
+Look for:
+
+```
+ERROR LSP server exited unexpectedly language=typescript code=1
+```
+
+**Solution**: Check LSP server logs, verify installation, review configuration.
+
+### Session Database Errors
+
+Look for:
+
+```
+ERROR Failed to save session error="database is locked"
+```
+
+**Solution**: Ensure only one Crush instance is running per project.
+
+## Sharing Logs for Support
+
+When reporting issues:
+
+1. **Enable debug mode**:
+   ```bash
+   crush --debug
+   ```
+
+2. **Reproduce the issue**
+
+3. **Extract relevant logs**:
+   ```bash
+   crush logs --tail 500 > crush-debug.log
+   ```
+
+4. **Review for sensitive information** (file paths, API keys, etc.)
+
+5. **Share the log file** with your issue report
+
+<Tip>
+  When sharing logs, use `--tail` to limit output to relevant entries. A focused log excerpt is more helpful than thousands of lines.
+</Tip>
+
+## Log Locations by Platform
+
+The log file location is always relative to your project:
+
+```bash
+# Unix/Linux/macOS
+./crush/logs/crush.log
+
+# Windows
+.\crush\logs\crush.log
+```
+
+If you've configured a custom data directory:
+
+```bash
+crush --data-dir /path/to/custom/.crush
+
+# Logs will be at:
+/path/to/custom/.crush/logs/crush.log
+```
+
+## Best Practices
+
+1. **Use `crush logs` instead of `cat`**: The logs command formats output nicely and supports following
+2. **Enable debug mode when troubleshooting**: More information helps diagnose issues
+3. **Check logs after errors**: Logs often contain more detail than UI error messages
+4. **Clean up old logs periodically**: Keep disk usage under control
+5. **Don't commit log files**: Add `.crush/logs/` to your `.gitignore`
+6. **Use `--tail` to limit output**: Large log files can be overwhelming
+
+## Advanced: Direct Log Access
+
+You can also view logs directly with standard Unix tools:
+
+```bash
+# View raw JSON logs
+cat .crush/logs/crush.log
+
+# Search logs with grep
+grep "ERROR" .crush/logs/crush.log
+
+# Follow with tail
+tail -f .crush/logs/crush.log
+
+# Parse JSON with jq
+cat .crush/logs/crush.log | jq -r '.msg'
+```
+
+However, `crush logs` is recommended as it provides better formatting and filtering.

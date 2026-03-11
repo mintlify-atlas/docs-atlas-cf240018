@@ -1,0 +1,281 @@
+---
+title: 'Vertex AI'
+description: 'Run AI models through Google Cloud Vertex AI Platform'
+icon: 'google'
+---
+
+Crush supports running AI models through Google Cloud's Vertex AI platform, which provides access to various foundation models including Anthropic Claude via Google Cloud.
+
+## Prerequisites
+
+Before using Vertex AI with Crush, you need:
+
+1. A Google Cloud account with Vertex AI enabled
+2. The `gcloud` CLI installed and configured
+3. A Google Cloud project with billing enabled
+4. Vertex AI API enabled in your project
+
+## Required Environment Variables
+
+Vertex AI requires two environment variables to be set:
+
+### VERTEXAI_PROJECT
+
+Your Google Cloud project ID:
+
+```bash
+export VERTEXAI_PROJECT="my-project-id"
+```
+
+To find your project ID:
+
+```bash
+gcloud config get-value project
+```
+
+### VERTEXAI_LOCATION
+
+The Google Cloud region where you want to run models:
+
+```bash
+export VERTEXAI_LOCATION="us-central1"
+```
+
+Common locations:
+
+- `us-central1` (United States - Iowa)
+- `us-east4` (United States - N. Virginia)
+- `europe-west1` (Belgium)
+- `europe-west4` (Netherlands)
+- `asia-southeast1` (Singapore)
+
+<Note>
+Model availability varies by region. Check the [Vertex AI documentation](https://cloud.google.com/vertex-ai/docs/general/locations) for model availability in your preferred location.
+</Note>
+
+### Setting Both Variables
+
+<CodeGroup>
+```bash Unix/Linux/macOS
+export VERTEXAI_PROJECT="my-project-id"
+export VERTEXAI_LOCATION="us-central1"
+```
+
+```powershell Windows PowerShell
+$env:VERTEXAI_PROJECT="my-project-id"
+$env:VERTEXAI_LOCATION="us-central1"
+```
+</CodeGroup>
+
+## Authentication
+
+Crush uses Google Cloud's Application Default Credentials (ADC) for authentication. You need to authenticate using the `gcloud` CLI:
+
+```bash
+gcloud auth application-default login
+```
+
+This command will:
+
+1. Open your web browser
+2. Ask you to sign in to your Google account
+3. Request permission to access Google Cloud resources
+4. Store credentials locally for use by Crush
+
+<Tip>
+You only need to run `gcloud auth application-default login` once. The credentials will persist until you log out or they expire.
+</Tip>
+
+## Enabling Vertex AI in Crush
+
+Once you have set the required environment variables and authenticated, Crush will automatically detect your Vertex AI configuration and show it as an available provider.
+
+To verify:
+
+1. Set `VERTEXAI_PROJECT` and `VERTEXAI_LOCATION`
+2. Run `gcloud auth application-default login`
+3. Start Crush: `crush`
+4. Check the list of available models for Vertex AI
+
+## Model Configuration
+
+While Crush will automatically detect Vertex AI, you can customize the available models in your `crush.json` configuration:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "providers": {
+    "vertexai": {
+      "models": [
+        {
+          "id": "claude-sonnet-4@20250514",
+          "name": "VertexAI Sonnet 4",
+          "cost_per_1m_in": 3,
+          "cost_per_1m_out": 15,
+          "cost_per_1m_in_cached": 3.75,
+          "cost_per_1m_out_cached": 0.3,
+          "context_window": 200000,
+          "default_max_tokens": 50000,
+          "can_reason": true,
+          "supports_attachments": true
+        }
+      ]
+    }
+  }
+}
+```
+
+### Model Configuration Fields
+
+- **`id`**: The Vertex AI model identifier (e.g., `claude-sonnet-4@20250514`)
+- **`name`**: Display name for the model in Crush
+- **`cost_per_1m_in`**: Cost per 1 million input tokens (USD)
+- **`cost_per_1m_out`**: Cost per 1 million output tokens (USD)
+- **`cost_per_1m_in_cached`**: Cost per 1 million cached input tokens (USD)
+- **`cost_per_1m_out_cached`**: Cost per 1 million cached output tokens (USD)
+- **`context_window`**: Maximum number of tokens (input + output)
+- **`default_max_tokens`**: Default maximum tokens for responses
+- **`can_reason`**: Whether the model supports extended thinking
+- **`supports_attachments`**: Whether the model can process file attachments
+
+<Warning>
+Update the pricing information in your configuration to match Google Cloud's current rates, as they may change over time.
+</Warning>
+
+## Available Models
+
+Through Vertex AI, you can access various models including:
+
+- **Anthropic Claude models** (Claude 3.5, Claude 3 family)
+- **Google's Gemini models**
+- Other supported foundation models
+
+Model availability depends on your Google Cloud region and project configuration.
+
+## Pricing and Billing
+
+Vertex AI pricing differs from direct provider APIs:
+
+### Pricing Structure
+
+- **Per-token pricing**: Charged based on input and output tokens
+- **Caching discount**: Lower rates for cached prompt tokens (when supported)
+- **Region-specific**: Prices vary by Google Cloud region
+- **No minimum charges**: Pay only for what you use
+
+### Cost Tracking
+
+Crush tracks your token usage and estimated costs. To view your usage:
+
+```bash
+crush stats
+```
+
+<Tip>
+Google Cloud billing is separate from Crush. Check your Google Cloud Console for detailed billing information and set up budget alerts.
+</Tip>
+
+### Pricing Resources
+
+- [Vertex AI Pricing](https://cloud.google.com/vertex-ai/pricing)
+- [Claude on Vertex AI Pricing](https://cloud.google.com/vertex-ai/generative-ai/docs/partner-models/use-claude)
+- [Google Cloud Pricing Calculator](https://cloud.google.com/products/calculator)
+
+## Troubleshooting
+
+### Vertex AI Not Appearing
+
+If Vertex AI doesn't show up as a provider:
+
+1. Verify environment variables are set:
+   ```bash
+   echo $VERTEXAI_PROJECT
+   echo $VERTEXAI_LOCATION
+   ```
+2. Check authentication status:
+   ```bash
+   gcloud auth application-default print-access-token
+   ```
+3. Ensure Vertex AI API is enabled in your project
+
+### Authentication Errors
+
+If you see authentication errors:
+
+1. Re-authenticate:
+   ```bash
+   gcloud auth application-default login
+   ```
+2. Verify your account has necessary permissions
+3. Check that your credentials haven't expired
+
+### API Not Enabled
+
+If you see "API not enabled" errors:
+
+1. Enable the Vertex AI API:
+   ```bash
+   gcloud services enable aiplatform.googleapis.com
+   ```
+2. Wait a few minutes for the API to be fully enabled
+3. Restart Crush
+
+### Permission Denied
+
+If you see permission errors:
+
+1. Verify you have the required IAM roles:
+   - `Vertex AI User` or `Vertex AI Administrator`
+2. Check project-level permissions in Google Cloud Console
+3. Ensure billing is enabled on your project
+
+## Required IAM Roles
+
+Your Google Cloud account needs the following IAM roles:
+
+- **`roles/aiplatform.user`**: To use Vertex AI services
+
+Or the more permissive:
+
+- **`roles/aiplatform.admin`**: For full Vertex AI access
+
+To grant the role:
+
+```bash
+gcloud projects add-iam-policy-binding PROJECT_ID \
+  --member="user:your-email@example.com" \
+  --role="roles/aiplatform.user"
+```
+
+<Note>
+Replace `PROJECT_ID` with your actual project ID and `your-email@example.com` with your Google account email.
+</Note>
+
+## Best Practices
+
+### Region Selection
+
+Choose a region based on:
+
+- **Latency**: Select a region close to your location
+- **Model availability**: Not all models are available in all regions
+- **Pricing**: Prices may vary slightly by region
+- **Data residency**: Choose regions that comply with your data regulations
+
+### Cost Optimization
+
+1. **Monitor usage**: Use `crush stats` to track token consumption
+2. **Set budget alerts**: Configure alerts in Google Cloud Console
+3. **Use appropriate models**: Smaller models cost less but may be sufficient for some tasks
+4. **Leverage caching**: Use models that support prompt caching to reduce costs
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Amazon Bedrock" icon="aws" href="/advanced/amazon-bedrock">
+    Learn about using AWS Bedrock with Crush
+  </Card>
+  <Card title="Custom Providers" icon="code" href="/advanced/custom-providers">
+    Configure custom API providers
+  </Card>
+</CardGroup>

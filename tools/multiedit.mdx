@@ -1,0 +1,498 @@
+---
+title: MultiEdit Tool
+description: Apply multiple find-and-replace edits to a single file in one efficient operation
+---
+
+## Overview
+
+The MultiEdit tool applies multiple edits to a single file in one operation. It's built on top of the [Edit tool](/tools/edit) and follows the same exact-matching rules. Use MultiEdit instead of multiple Edit calls when making several changes to the same file.
+
+## Parameters
+
+<ParamField path="file_path" type="string" required>
+  The absolute path to the file to modify. Relative paths are resolved from the working directory.
+</ParamField>
+
+<ParamField path="edits" type="array" required>
+  Array of edit operations to apply sequentially. Each edit contains:
+  - `old_string` - Text to find and replace
+  - `new_string` - Replacement text
+  - `replace_all` - (optional) Replace all occurrences
+</ParamField>
+
+## Edit Operation Structure
+
+```json
+{
+  "file_path": "/path/to/file.go",
+  "edits": [
+    {
+      "old_string": "text to replace",
+      "new_string": "replacement text",
+      "replace_all": false
+    },
+    {
+      "old_string": "another text",
+      "new_string": "new text",
+      "replace_all": false
+    }
+  ]
+}
+```
+
+## Features
+
+### Sequential Application
+
+Edits are applied **in order**, with each edit operating on the result of the previous edit:
+
+```json
+{
+  "edits": [
+    // Edit 1: Changes func name
+    {"old_string": "func OldName()", "new_string": "func NewName()"},
+    
+    // Edit 2: Operates on result of Edit 1
+    {"old_string": "func NewName() {\n\treturn nil", "new_string": "func NewName() {\n\tlog.Print(\"called\")\n\treturn nil"}
+  ]
+}
+```
+
+### Partial Success
+
+If some edits fail, **successful edits are still applied**:
+
+```json
+// Response
+{
+  "edits_applied": 2,
+  "edits_failed": [
+    {
+      "index": 3,
+      "error": "old_string not found in content",
+      "edit": {"old_string": "...", "new_string": "..."}
+    }
+  ]
+}
+```
+
+This allows you to:
+- See which edits succeeded
+- Get error details for failed edits
+- Retry failed edits with corrected parameters
+
+### File Creation
+
+The first edit can create a new file by having an empty `old_string`:
+
+```json
+{
+  "file_path": "/path/to/newfile.go",
+  "edits": [
+    {
+      "old_string": "",
+      "new_string": "package main\n\nfunc main() {}\n"
+    },
+    {
+      "old_string": "func main() {}",
+      "new_string": "func main() {\n\tprintln(\"Hello\")\n}"
+    }
+  ]
+}
+```
+
+**Rules for file creation:**
+- Only the first edit can have empty `old_string`
+- File must not already exist
+- Subsequent edits work on the created content
+
+## Critical Requirements
+
+### All Edit Tool Rules Apply
+
+**Every single rule from the [Edit tool](/tools/edit) applies to each edit:**
+
+- ✅ Exact whitespace matching
+- ✅ Indentation precision
+- ✅ Blank line matching
+- ✅ Uniqueness requirements
+- ✅ Context inclusion
+- ✅ Character-for-character matching
+
+MultiEdit often fails due to whitespace mismatches. Double-check every edit.
+
+### Sequential Context
+
+Each edit changes the file content for the next edit:
+
+**Example - Planning Ahead:**
+```json
+[
+  // Edit 1 adds a line
+  {
+    "old_string": "func A() {\n\treturn 1\n}",
+    "new_string": "func A() {\n\tlog.Print(\"A\")\n\treturn 1\n}"
+  },
+  // Edit 2 must account for the new line
+  {
+    "old_string": "func A() {\n\tlog.Print(\"A\")\n\treturn 1\n}\n\nfunc B() {",
+    "new_string": "func A() {\n\tlog.Print(\"A\")\n\treturn 1\n}\n\nfunc B() {\n\tlog.Print(\"B\")"
+  }
+]
+```
+
+### Verification Requirements
+
+Before submitting MultiEdit:
+
+1. **View the file** to understand current state
+2. **Plan the sequence** - mentally apply each edit
+3. **Check for conflicts** - will edit N affect edit N+1?
+4. **Verify uniqueness** of each `old_string` at its application time
+5. **Include context** for each edit (3-5 lines)
+6. **Double-check whitespace** for every edit
+
+## Usage Examples
+
+### Multiple Function Modifications
+
+```json
+{
+  "file_path": "/path/to/handlers.go",
+  "edits": [
+    {
+      "old_string": "func HandleA() error {\n\treturn nil\n}",
+      "new_string": "func HandleA() error {\n\treturn errors.New(\"not implemented\")\n}"
+    },
+    {
+      "old_string": "func HandleB() error {\n\treturn nil\n}",
+      "new_string": "func HandleB() error {\n\treturn errors.New(\"not implemented\")\n}"
+    }
+  ]
+}
+```
+
+### Rename Multiple Occurrences
+
+```json
+{
+  "file_path": "/path/to/service.go",
+  "edits": [
+    {
+      "old_string": "oldServiceName",
+      "new_string": "newServiceName",
+      "replace_all": true
+    },
+    {
+      "old_string": "OldServiceName",
+      "new_string": "NewServiceName",
+      "replace_all": true
+    }
+  ]
+}
+```
+
+### Add Multiple Imports
+
+```json
+{
+  "file_path": "/path/to/handler.go",
+  "edits": [
+    {
+      "old_string": "import (\n\t\"fmt\"\n)",
+      "new_string": "import (\n\t\"fmt\"\n\t\"log\"\n)"
+    },
+    {
+      "old_string": "import (\n\t\"fmt\"\n\t\"log\"\n)",
+      "new_string": "import (\n\t\"fmt\"\n\t\"log\"\n\t\"errors\"\n)"
+    }
+  ]
+}
+```
+
+**Note:** Each edit operates on the result of the previous one.
+
+### Create and Populate File
+
+```json
+{
+  "file_path": "/path/to/newfile.go",
+  "edits": [
+    {
+      "old_string": "",
+      "new_string": "package main\n\nfunc main() {}\n"
+    },
+    {
+      "old_string": "func main() {}",
+      "new_string": "func main() {\n\tprintln(\"Hello\")\n}"
+    }
+  ]
+}
+```
+
+## Best Practices
+
+### Planning Edits
+
+1. **Read the file first** with View tool
+2. **List all changes** you want to make
+3. **Order edits** from top to bottom of file (usually safest)
+4. **Check for conflicts** between edits
+5. **Dry-run mentally** - simulate each edit
+
+### Independent vs Dependent Edits
+
+**Independent edits** (safe to combine):
+```json
+[
+  {"old_string": "func A() {\n\treturn 1\n}", "new_string": "func A() {\n\treturn 2\n}"},
+  {"old_string": "func B() {\n\treturn 3\n}", "new_string": "func B() {\n\treturn 4\n}"}
+]
+```
+
+**Dependent edits** (need careful planning):
+```json
+[
+  {"old_string": "type User struct {}", "new_string": "type User struct {\n\tID string\n}"},
+  // Next edit must match the new structure
+  {"old_string": "type User struct {\n\tID string\n}", "new_string": "type User struct {\n\tID string\n\tName string\n}"}
+]
+```
+
+### Handling Failures
+
+1. **Check response metadata** for failed edits
+2. **View the file** to see current state after successful edits
+3. **Adjust failed edits** based on new content
+4. **Retry failed edits** with corrected `old_string`
+5. **Consider breaking** complex batches into smaller operations
+
+## Error Handling
+
+### Some Edits Failed
+
+Response includes details:
+```json
+{
+  "message": "Applied 2 of 3 edits to file: /path/to/file.go (1 edit(s) failed)",
+  "metadata": {
+    "edits_applied": 2,
+    "edits_failed": [
+      {
+        "index": 3,
+        "error": "old_string not found in content. Make sure it matches exactly, including whitespace and line breaks.",
+        "edit": {
+          "old_string": "func C() {}",
+          "new_string": "func C() { return }"
+        }
+      }
+    ]
+  }
+}
+```
+
+**Recovery steps:**
+1. View the file to see current state
+2. Note which edits succeeded
+3. Adjust the failed edit's `old_string`
+4. Retry with corrected edit
+
+### All Edits Failed
+
+If no edits succeed:
+```
+no changes made - all 3 edit(s) failed
+```
+
+**Common causes:**
+- File content doesn't match expectations
+- Whitespace mismatches
+- Wrong file
+- File modified externally
+
+**Solution:** View the file and check actual content.
+
+### Edit Validation Errors
+
+```
+edit 2: only the first edit can have empty old_string (for file creation)
+```
+
+This means:
+- Only edit #1 can have empty `old_string`
+- Other edits must provide `old_string`
+
+## Permissions
+
+MultiEdit requires permission for all write operations. You can pre-approve:
+
+```json
+{
+  "allow": {
+    "multiedit": ["~/projects/myapp/src"]
+  }
+}
+```
+
+## LSP Integration
+
+After applying edits, Crush automatically:
+
+1. **Notifies LSP servers** about file changes
+2. **Waits for diagnostics**
+3. **Includes diagnostics** in response
+
+```xml
+<result>
+Applied 3 edits to file: /path/to/file.go
+</result>
+
+<diagnostics file="/path/to/file.go">
+  Line 15: undefined: fmt (error)
+</diagnostics>
+```
+
+## Whitespace Checklist
+
+For **EACH** edit in the array, verify:
+
+- [ ] Viewed the file first
+- [ ] Counted indentation spaces/tabs
+- [ ] Included blank lines if present
+- [ ] Matched brace/bracket positioning
+- [ ] Included 3-5 lines of context
+- [ ] Verified text appears exactly once (or using replace_all)
+- [ ] Copied character-for-character, not approximated
+- [ ] Considered impact on subsequent edits
+
+## Common Pitfalls
+
+### Pitfall 1: Not Accounting for Previous Edits
+
+❌ **Wrong:**
+```json
+[
+  {"old_string": "func A() {\n\treturn 1\n}", "new_string": "func A() {\n\n\treturn 1\n}"},  // Added blank line
+  {"old_string": "func A() {\n\treturn 1\n}", "new_string": "..."}  // FAILS - no blank line in old_string
+]
+```
+
+✅ **Correct:**
+```json
+[
+  {"old_string": "func A() {\n\treturn 1\n}", "new_string": "func A() {\n\n\treturn 1\n}"},
+  {"old_string": "func A() {\n\n\treturn 1\n}", "new_string": "..."}  // Accounts for blank line
+]
+```
+
+### Pitfall 2: Edits Conflict
+
+❌ **Wrong:**
+```json
+[
+  {"old_string": "x := 1", "new_string": "y := 1"},
+  {"old_string": "x := 1", "new_string": "z := 1"}  // FAILS - x := 1 no longer exists
+]
+```
+
+✅ **Correct:**
+```json
+[
+  {"old_string": "x := 1", "new_string": "y := 1"},
+  {"old_string": "y := 1", "new_string": "z := 1"}  // Operates on result of edit 1
+]
+```
+
+### Pitfall 3: Wrong Order
+
+❌ **Wrong:**
+```json
+[
+  {"old_string": "import (\n\t\"fmt\"\n)", "new_string": "import (\n\t\"fmt\"\n\t\"log\"\n)"},
+  {"old_string": "import \"fmt\"", "new_string": "import (\n\t\"fmt\"\n)"}  // FAILS - already changed
+]
+```
+
+✅ **Correct:**
+```json
+[
+  {"old_string": "import \"fmt\"", "new_string": "import (\n\t\"fmt\"\n)"},
+  {"old_string": "import (\n\t\"fmt\"\n)", "new_string": "import (\n\t\"fmt\"\n\t\"log\"\n)"}
+]
+```
+
+## MultiEdit vs Multiple Edits
+
+### Use MultiEdit When:
+
+- ✅ Multiple changes to **same file**
+- ✅ Changes are **independent** or carefully planned
+- ✅ Want **atomic operation** (partial success acceptable)
+- ✅ Reducing round trips to file system
+
+### Use Multiple Edit Calls When:
+
+- ✅ Changes to **different files**
+- ✅ Unsure about edit sequence
+- ✅ Want **all-or-nothing** behavior
+- ✅ Edits are complex and error-prone
+
+### Example Comparison
+
+**Multiple Edit calls:**
+```json
+[
+  {"tool": "edit", "file_path": "file.go", "old_string": "A", "new_string": "B"},
+  {"tool": "edit", "file_path": "file.go", "old_string": "C", "new_string": "D"}
+]
+```
+
+**MultiEdit:**
+```json
+{
+  "tool": "multiedit",
+  "file_path": "file.go",
+  "edits": [
+    {"old_string": "A", "new_string": "B"},
+    {"old_string": "C", "new_string": "D"}
+  ]
+}
+```
+
+Both achieve the same result, but MultiEdit:
+- ✅ Makes one file write instead of two
+- ✅ Provides aggregate diff
+- ✅ Allows partial success
+- ❌ Requires more careful planning
+
+## Advanced Usage
+
+### Refactoring Multiple Functions
+
+```json
+{
+  "file_path": "service.go",
+  "edits": [
+    // Rename methods
+    {"old_string": "func (s *Service) OldMethod1", "new_string": "func (s *Service) NewMethod1", "replace_all": true},
+    {"old_string": "func (s *Service) OldMethod2", "new_string": "func (s *Service) NewMethod2", "replace_all": true},
+    // Update method bodies
+    {"old_string": "s.OldMethod1()", "new_string": "s.NewMethod1()", "replace_all": true},
+    {"old_string": "s.OldMethod2()", "new_string": "s.NewMethod2()", "replace_all": true}
+  ]
+}
+```
+
+### Adding Multiple Fields
+
+```json
+{
+  "file_path": "models.go",
+  "edits": [
+    {"old_string": "type User struct {\n\tID string\n}", "new_string": "type User struct {\n\tID string\n\tName string\n}"},
+    {"old_string": "type User struct {\n\tID string\n\tName string\n}", "new_string": "type User struct {\n\tID string\n\tName string\n\tEmail string\n}"}
+  ]
+}
+```
+
+Note how each edit builds on the previous one.

@@ -1,0 +1,257 @@
+---
+title: "Context Files"
+description: "Provide project-specific instructions to Crush using context files"
+---
+
+## What Are Context Files?
+
+Context files are markdown files that contain project-specific instructions, conventions, and context for Crush. They help the AI understand your project's unique requirements, coding standards, and preferences.
+
+When you start Crush, it automatically reads these files and includes their content in the system prompt, giving the AI awareness of your project's specific needs.
+
+## Supported Context Files
+
+Crush looks for the following context files in your project root (in order of precedence):
+
+- `.github/copilot-instructions.md`
+- `.cursorrules`
+- `.cursor/rules/`
+- `CLAUDE.md`
+- `CLAUDE.local.md`
+- `GEMINI.md` / `gemini.md`
+- `crush.md` / `Crush.md` / `CRUSH.md`
+- `crush.local.md` / `Crush.local.md` / `CRUSH.local.md`
+- `AGENTS.md` / `agents.md` / `Agents.md`
+
+All matching files are read and their contents are combined to form the context.
+
+## Local Variants
+
+Files with `.local` in the name (e.g., `CRUSH.local.md`, `CLAUDE.local.md`) are intended for local development settings that shouldn't be committed to version control.
+
+**Recommended `.gitignore` entries:**
+
+```gitignore
+*.local.md
+CRUSH.local.md
+CLAUDE.local.md
+```
+
+Use local variants for:
+
+- Personal preferences and workflows
+- Local development environment specifics
+- Experimental instructions you're testing
+- Sensitive information that shouldn't be shared
+
+## How Crush Uses Context Files
+
+When you start Crush or begin a new session:
+
+1. Crush scans your project root for context files
+2. All matching files are read sequentially
+3. Their contents are combined and included in the system prompt
+4. The AI agent uses this context to understand your project
+
+This happens automatically—no configuration required.
+
+## Creating Your First Context File
+
+The easiest way to create a context file is through project initialization:
+
+1. Run Crush in a project for the first time
+2. Crush will offer to analyze your project
+3. It creates an `AGENTS.md` file with discovered conventions
+
+You can also create context files manually. Here's a simple example:
+
+```markdown
+# Project Context
+
+## Tech Stack
+
+This is a Go project using:
+- Chi for HTTP routing
+- sqlc for database queries
+- Bubble Tea for TUI components
+
+## Coding Conventions
+
+- Use `gofumpt` for formatting
+- Write tests for all public functions
+- Log messages start with capital letters
+- Use octal notation for file permissions (0o755, 0o644)
+
+## Project Structure
+
+- `internal/`: Private Go packages
+- `cmd/`: CLI entry points
+- `pkg/`: Public Go packages
+```
+
+## What to Include in Context Files
+
+Good context files typically include:
+
+### Project Information
+
+- Tech stack and frameworks
+- Language version and tooling
+- Build system and commands
+- Testing framework and conventions
+
+### Coding Standards
+
+- Formatting rules and linters
+- Naming conventions
+- Error handling patterns
+- Documentation requirements
+
+### Architecture and Patterns
+
+- Directory structure
+- Design patterns in use
+- Key architectural decisions
+- Module boundaries
+
+### Domain Knowledge
+
+- Business logic context
+- Important domain concepts
+- API contracts
+- Data models
+
+### Project-Specific Preferences
+
+- Preferred libraries for common tasks
+- Code review requirements
+- Performance considerations
+- Security guidelines
+
+## Example Context File
+
+```markdown
+# E-commerce Platform Context
+
+## Overview
+
+This is a TypeScript/Node.js e-commerce API using:
+
+- Express.js for HTTP
+- Prisma for database ORM
+- Jest for testing
+- ESLint + Prettier for linting/formatting
+
+## Key Conventions
+
+- All API endpoints return JSON
+- Use async/await, never callbacks
+- Validate input with Zod schemas
+- Write integration tests for all endpoints
+- Error responses use RFC 7807 Problem Details
+
+## Important Notes
+
+- The `Order` entity is the source of truth for pricing
+- Product inventory updates must be atomic
+- All currency amounts are stored in cents (integers)
+- User sessions expire after 24 hours
+
+## File Organization
+
+- `src/routes/`: API route handlers
+- `src/services/`: Business logic
+- `src/models/`: Prisma schema and types
+- `src/middleware/`: Express middleware
+- `src/utils/`: Helper functions
+
+## Testing
+
+Run tests with: `npm test`
+Run with coverage: `npm run test:coverage`
+
+Tests should:
+- Use descriptive `describe` and `it` blocks
+- Clean up database state in `afterEach`
+- Mock external API calls
+```
+
+## Best Practices
+
+<Tip>
+  Start with a simple context file and expand it as you work with Crush. Note patterns or conventions that the AI frequently misses and add them to your context.
+</Tip>
+
+### Keep It Focused
+
+- Include information that helps the AI make better decisions
+- Avoid duplicating information that's obvious from the code
+- Update the file when conventions change
+
+### Use Markdown Formatting
+
+- Use headers to organize sections
+- Use code blocks for examples
+- Use bullet points for lists
+- Use bold or italic for emphasis
+
+### Be Specific
+
+- Instead of "write good tests," specify "use Jest with describe/it blocks"
+- Instead of "follow conventions," list the actual conventions
+- Include examples for complex patterns
+
+### Maintain Accuracy
+
+- Review and update context files regularly
+- Remove outdated information
+- Keep it synchronized with your actual practices
+
+## Custom Context Paths
+
+You can configure additional context file paths in your `crush.json`:
+
+```json
+{
+  "options": {
+    "context_paths": [
+      "docs/ai-instructions.md",
+      ".github/crush-context.md"
+    ]
+  }
+}
+```
+
+This allows you to:
+
+- Store context files in a `docs/` directory
+- Use custom naming conventions
+- Include multiple context files from different locations
+
+## Context Files vs. Initialization
+
+While project initialization creates an `AGENTS.md` file automatically, you can:
+
+- Edit this file manually to refine the context
+- Add other context files (like `CRUSH.local.md`) for additional instructions
+- Re-run initialization to update the file as your project evolves
+
+See the [Initialization guide](/guides/initialization) for more details.
+
+## Troubleshooting
+
+### Context File Not Being Read
+
+1. Ensure the file is in your project root (where you run `crush`)
+2. Check that the filename exactly matches one of the supported names
+3. Verify the file has `.md` extension
+4. Look at Crush logs to see which files were loaded: `crush logs`
+
+### Context Too Large
+
+If your context files are very large:
+
+- Keep only the most important information
+- Use concise language and bullet points
+- Split concerns across multiple files (e.g., `AGENTS.md` for code, `CRUSH.local.md` for personal preferences)
+- Remember that context consumes tokens from your context window

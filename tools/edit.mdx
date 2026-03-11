@@ -1,0 +1,342 @@
+---
+title: Edit Tool
+description: Make precise text replacements in existing files with exact string matching
+---
+
+## Overview
+
+The Edit tool makes surgical changes to files by finding and replacing exact text. It's designed for targeted modifications and requires exact matching of whitespace, indentation, and formatting. For creating new files or complete rewrites, use the [Write tool](/tools/write) instead.
+
+## Parameters
+
+<ParamField path="file_path" type="string" required>
+  The absolute path to the file to modify. Relative paths are resolved from the working directory.
+</ParamField>
+
+<ParamField path="old_string" type="string">
+  The exact text to find and replace. Must match character-for-character including all whitespace, tabs, and newlines. Leave empty to create a new file.
+</ParamField>
+
+<ParamField path="new_string" type="string">
+  The replacement text. Leave empty to delete the old_string content.
+</ParamField>
+
+<ParamField path="replace_all" type="boolean">
+  If `true`, replaces all occurrences of old_string. If `false` (default), old_string must appear exactly once.
+</ParamField>
+
+## Special Operations
+
+### Create New File
+
+Leave `old_string` empty and provide `new_string`:
+
+```json
+{
+  "file_path": "/path/to/newfile.go",
+  "old_string": "",
+  "new_string": "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}"
+}
+```
+
+### Delete Content
+
+Provide `old_string` and leave `new_string` empty:
+
+```json
+{
+  "file_path": "/path/to/file.go",
+  "old_string": "// Temporary debug code\nfmt.Println(\"debug\")\n",
+  "new_string": ""
+}
+```
+
+### Replace Content
+
+Provide both `old_string` and `new_string`:
+
+```json
+{
+  "file_path": "/path/to/file.go",
+  "old_string": "oldFunction()",
+  "new_string": "newFunction()"
+}
+```
+
+## Critical Requirements
+
+### Exact Matching
+
+The Edit tool is **extremely literal**. Every character must match exactly:
+
+- **Spaces vs Tabs** - `    ` (4 spaces) ≠ `\t` (1 tab)
+- **Indentation** - `  if` (2 spaces) ≠ `    if` (4 spaces)
+- **Blank Lines** - `}\n\nfunc` (2 newlines) ≠ `}\nfunc` (1 newline)
+- **Comment Spacing** - `// comment` ≠ `//comment`
+- **Brace Positioning** - `func() {` ≠ `func(){`
+- **Trailing Spaces** - `return nil ` ≠ `return nil`
+
+### Common Failures
+
+```go
+// Expected in file
+    func foo() {  // 4 spaces indentation
+
+// What you provided  
+  func foo() {    // 2 spaces - FAILS ❌
+```
+
+```go
+// Expected in file
+}
+
+func bar() {    // 2 newlines between functions
+
+// What you provided
+}
+func bar() {    // 1 newline - FAILS ❌
+```
+
+### Uniqueness Requirement
+
+When `replace_all: false` (default), the `old_string` must appear **exactly once** in the file. If it appears multiple times, the tool returns an error.
+
+**Solution 1: Add More Context**
+
+Instead of:
+```json
+{"old_string": "return nil"}  // Appears many times!
+```
+
+Use:
+```json
+{
+  "old_string": "func ValidateUser() error {\n\treturn nil\n}"
+}
+```
+
+**Solution 2: Use replace_all**
+
+If you want to replace all occurrences:
+```json
+{
+  "old_string": "oldVariable",
+  "new_string": "newVariable",
+  "replace_all": true
+}
+```
+
+## Prerequisites
+
+Before using the Edit tool:
+
+1. **Use the [View tool](/tools/view)** to read the file and understand its contents
+2. **Note the exact formatting** including indentation, blank lines, and spacing
+3. **Verify parent directory exists** when creating new files (use [LS tool](/tools/ls))
+4. **Count the indentation** spaces or tabs at each level
+
+## Best Practices
+
+### Include Context
+
+Provide 3-5 lines of context before and after the change point:
+
+✅ **Good - Includes Context:**
+```json
+{
+  "old_string": "func ProcessData(input string) error {\n\tif input == \"\" {\n\t\treturn errors.New(\"empty input\")\n\t}\n\treturn nil\n}",
+  "new_string": "func ProcessData(input string) error {\n\tif input == \"\" {\n\t\treturn errors.New(\"empty input\")\n\t}\n\t// New validation\n\tif len(input) > 1000 {\n\t\treturn errors.New(\"input too long\")\n\t}\n\treturn nil\n}"
+}
+```
+
+❌ **Bad - Not Enough Context:**
+```json
+{
+  "old_string": "return nil"  // Appears many times!
+}
+```
+
+### Verify Before Submitting
+
+Checklist before each edit:
+
+- [ ] Read the file with View tool first
+- [ ] Counted indentation spaces/tabs
+- [ ] Included blank lines if they exist
+- [ ] Matched brace/bracket positioning
+- [ ] Included 3-5 lines of surrounding context
+- [ ] Verified text appears exactly once (or using replace_all)
+- [ ] Copied text character-for-character, not approximated
+
+### Handle Whitespace Carefully
+
+When copying from View tool output, remember:
+
+1. **Line numbers are prefixed** - The View tool shows:
+   ```
+      42|	func example() {
+   ```
+   The actual file content is: `\tfunc example() {` (note the tab)
+
+2. **Copy from after the line number prefix** - Don't include the spaces and numbers
+
+3. **Count indentation** from the actual file content, not the display
+
+## Recovery Steps
+
+If you get "old_string not found in file":
+
+1. **View the file again** to see current state
+2. **Copy more context** - include entire function if needed
+3. **Check whitespace** character-by-character:
+   - Count indentation spaces/tabs
+   - Look for blank lines
+   - Check for trailing spaces
+4. **Verify character-by-character** that your old_string matches
+5. **Never guess** - always View the file to get exact text
+
+If you get "old_string appears multiple times":
+
+1. **Add more context** to make it unique
+2. **Use replace_all: true** if you want to change all occurrences
+3. **Consider separate edits** with unique context for each instance
+
+## Examples
+
+### Simple Replacement
+
+```json
+{
+  "file_path": "/path/to/config.go",
+  "old_string": "const MaxRetries = 3",
+  "new_string": "const MaxRetries = 5"
+}
+```
+
+### Adding Code with Context
+
+```json
+{
+  "file_path": "/path/to/handler.go",
+  "old_string": "func HandleRequest(req *Request) error {\n\tif req == nil {\n\t\treturn errors.New(\"nil request\")\n\t}\n\treturn nil\n}",
+  "new_string": "func HandleRequest(req *Request) error {\n\tif req == nil {\n\t\treturn errors.New(\"nil request\")\n\t}\n\tif req.ID == \"\" {\n\t\treturn errors.New(\"missing ID\")\n\t}\n\treturn nil\n}"
+}
+```
+
+### Replacing All Occurrences
+
+```json
+{
+  "file_path": "/path/to/service.go",
+  "old_string": "oldServiceName",
+  "new_string": "newServiceName",
+  "replace_all": true
+}
+```
+
+### Deleting Code
+
+```json
+{
+  "file_path": "/path/to/debug.go",
+  "old_string": "\n\t// Debug logging\n\tlog.Println(\"Debug:\", data)\n",
+  "new_string": ""
+}
+```
+
+## Multiple Edits
+
+For multiple edits to the same file, you have two options:
+
+### Option 1: Multiple Edit Calls (in one message)
+
+```json
+[
+  {
+    "tool": "edit",
+    "file_path": "/path/to/file.go",
+    "old_string": "func A() {\n\treturn 1\n}",
+    "new_string": "func A() {\n\treturn 2\n}"
+  },
+  {
+    "tool": "edit",
+    "file_path": "/path/to/file.go",
+    "old_string": "func B() {\n\treturn 1\n}",
+    "new_string": "func B() {\n\treturn 2\n}"
+  }
+]
+```
+
+### Option 2: Use MultiEdit Tool
+
+For multiple edits to the same file, consider using the [MultiEdit tool](/tools/multiedit) instead:
+
+```json
+{
+  "tool": "multiedit",
+  "file_path": "/path/to/file.go",
+  "edits": [
+    {"old_string": "func A() {\n\treturn 1\n}", "new_string": "func A() {\n\treturn 2\n}"},
+    {"old_string": "func B() {\n\treturn 1\n}", "new_string": "func B() {\n\treturn 2\n}"}
+  ]
+}
+```
+
+## Permissions
+
+The Edit tool requires permission for all write operations. You can pre-approve edits for specific paths:
+
+```json
+{
+  "allow": {
+    "edit": ["~/projects/myapp/src"]
+  }
+}
+```
+
+## LSP Integration
+
+After editing a file, Crush automatically:
+
+1. **Notifies LSP servers** about the file change
+2. **Waits for diagnostics** (errors, warnings)
+3. **Includes diagnostics** in the tool response
+
+This helps catch errors immediately after edits.
+
+## Platform Notes
+
+### Line Endings
+
+- **Unix/Linux/macOS**: LF (`\n`)
+- **Windows**: CRLF (`\r\n`)
+
+The Edit tool automatically:
+- Normalizes to LF internally for matching
+- Preserves the original line ending style when writing
+
+You should use `\n` in your old_string and new_string regardless of platform.
+
+### Path Separators
+
+Use forward slashes `/` for file paths on all platforms:
+- ✅ `C:/Users/name/file.txt`
+- ❌ `C:\\Users\\name\\file.txt`
+
+## When to Use Edit vs Write
+
+### Use Edit When:
+
+- Making targeted changes to existing files
+- Replacing specific functions or sections
+- Modifying configuration values
+- Adding/removing specific code blocks
+- You need precise control over what changes
+
+### Use Write When:
+
+- Creating new files from scratch
+- Completely rewriting a file
+- The file content is mostly changing
+- You want to replace the entire file
+- The file is small and simple to regenerate

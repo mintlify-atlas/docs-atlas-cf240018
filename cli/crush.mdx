@@ -1,0 +1,131 @@
+---
+title: crush
+description: Main command to launch the Crush terminal AI assistant
+---
+
+The main `crush` command launches Crush in interactive mode, providing a terminal-first AI assistant for software development.
+
+## Usage
+
+```bash
+crush [flags]
+```
+
+## Description
+
+Crush is a glamorous, terminal-first AI assistant for software development and adjacent tasks. When you run `crush` without any subcommands, it launches the interactive TUI (Terminal User Interface) where you can chat with AI models, execute tools, and manage your development workflow.
+
+## Global Flags
+
+These flags are available for all Crush commands:
+
+<ParamField path="--cwd" type="string" default="current directory">
+  Current working directory. Use this to run Crush in a specific project directory without changing your shell's working directory.
+</ParamField>
+
+<ParamField path="--data-dir" type="string" default="~/.crush">
+  Custom Crush data directory. Override the default location where Crush stores its configuration, database, and logs.
+</ParamField>
+
+<ParamField path="--debug" type="boolean" default="false">
+  Enable debug logging. Shows detailed log output for troubleshooting.
+</ParamField>
+
+<ParamField path="--yolo" type="boolean" default="false">
+  Automatically accept all permissions (dangerous mode). Use with caution - this bypasses all permission prompts for tool execution.
+</ParamField>
+
+<ParamField path="--help" type="boolean" default="false">
+  Display help information for the command.
+</ParamField>
+
+## Configuration Loading
+
+When Crush starts, it loads configuration in the following order:
+
+1. **Project-level config**: Looks for `crush.json` in the current working directory
+2. **Global config**: Falls back to `~/.crush/crush.json`
+3. **Context files**: Reads project-specific instructions from:
+   - `AGENTS.md` - Instructions for AI agents
+   - `CRUSH.md` - Crush-specific instructions
+   - `CLAUDE.md` - Claude-specific instructions
+   - `GEMINI.md` - Gemini-specific instructions
+   - `.local` variants of any of the above
+
+## Examples
+
+<CodeGroup>
+```bash Interactive mode
+# Launch Crush in interactive mode
+crush
+```
+
+```bash Specific directory
+# Run in a specific project directory
+crush --cwd /path/to/project
+```
+
+```bash Debug mode
+# Run with debug logging
+crush --debug
+```
+
+```bash Custom data directory
+# Use a custom data directory
+crush --data-dir /path/to/custom/.crush
+```
+
+```bash YOLO mode
+# Auto-accept all permissions (use with care)
+crush --yolo
+```
+</CodeGroup>
+
+## Subcommands
+
+Crush provides several subcommands for specific tasks:
+
+- [`crush run`](/cli/run) - Run a single non-interactive prompt
+- [`crush login`](/cli/login) - Authenticate with providers
+- [`crush models`](/cli/models) - List available models
+- [`crush stats`](/cli/stats) - View usage statistics
+- [`crush logs`](/cli/logs) - View Crush logs
+- [`crush update-providers`](/cli/update-providers) - Update provider information
+
+## Initial Setup
+
+On first run, Crush will guide you through:
+
+1. **Provider configuration**: Choose and configure an AI provider (Anthropic, OpenAI, Gemini, etc.)
+2. **API key setup**: Enter your API keys securely
+3. **Model selection**: Choose your preferred models
+
+## Data Directory Structure
+
+The Crush data directory (default: `~/.crush`) contains:
+
+```
+.crush/
+├── crush.json          # Main configuration file
+├── crush.db            # SQLite database for sessions and history
+├── logs/
+│   └── crush.log      # Application logs
+├── stats/
+│   └── index.html     # Generated statistics page
+└── .gitignore         # Auto-generated to ignore all files
+```
+
+## Environment Variables
+
+Crush respects the following environment variables:
+
+- `CRUSH_DISABLE_METRICS` - Disable telemetry when set to `true`
+- `DO_NOT_TRACK` - Disable telemetry when set to `true`
+- `TERM_PROGRAM` - Used to detect terminal capabilities
+- `WT_SESSION` - Used to detect Windows Terminal
+
+## See Also
+
+- [Configuration](/configuration/overview) - Learn about configuring Crush
+- [Providers](/configuration/providers) - Supported AI providers
+- [Tools](/tools/overview) - Available tools for the AI agent
