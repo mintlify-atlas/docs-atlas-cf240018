@@ -94,7 +94,10 @@
               "tools/glob",
               "tools/ls",
               "tools/write",
-              "tools/multiedit"
+              "tools/multiedit",
+              "tools/diagnostics",
+              "tools/references",
+              "tools/fetch"
             ]
           }
         ]

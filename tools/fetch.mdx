@@ -1,0 +1,165 @@
+---
+title: Fetch
+description: Fetch raw content from URLs without AI processing
+---
+
+## Overview
+
+The Fetch tool retrieves raw content from URLs and returns it in a specified format (text, markdown, or HTML) without any AI processing or interpretation. Use this for simple, fast content retrieval when you need direct access to web resources.
+
+<ParamField path="url" type="string" required>
+  The URL to fetch content from. Must start with `http://` or `https://`
+</ParamField>
+
+<ParamField path="format" type="string" required>
+  The format to return the content in. Options: `text`, `markdown`, or `html`
+</ParamField>
+
+<ParamField path="timeout" type="number">
+  Optional timeout in seconds (max 120). If not specified, uses a default timeout.
+</ParamField>
+
+## Features
+
+- **Three output formats** - Text, Markdown, or HTML
+- **Automatic redirects** - Handles HTTP redirects transparently
+- **Fast and lightweight** - No AI processing overhead
+- **Configurable timeout** - Prevent hanging on slow sites
+- **Input validation** - Validates parameters before making requests
+
+## Usage
+
+### Fetch Plain Text Content
+
+```json
+{
+  "url": "https://api.example.com/status",
+  "format": "text"
+}
+```
+
+Returns the raw text content from the URL.
+
+### Fetch as Markdown
+
+```json
+{
+  "url": "https://example.com/blog/post",
+  "format": "markdown"
+}
+```
+
+Converts HTML content to Markdown format for easier reading.
+
+### Fetch with Custom Timeout
+
+```json
+{
+  "url": "https://slow-site.example.com/data",
+  "format": "text",
+  "timeout": 60
+}
+```
+
+Sets a 60-second timeout for the request.
+
+## Format Options
+
+| Format | When to Use | Example Use Case |
+|--------|-------------|------------------|
+| `text` | Plain text content or simple API responses | Fetching API status, text files, simple data |
+| `markdown` | Content that should be rendered with formatting | Documentation, blog posts, articles |
+| `html` | Raw HTML structure needed | Parsing HTML, template analysis |
+
+## When to Use
+
+<Tip>
+  Use the Fetch tool for simple, direct content retrieval. For content that needs analysis or extraction, consider using higher-level tools instead.
+</Tip>
+
+Use the Fetch tool when you need:
+
+- Raw, unprocessed content from a URL
+- Direct access to API responses or JSON data
+- HTML/text/markdown content without interpretation
+- Simple, fast content retrieval
+- To save tokens by avoiding AI processing
+
+**Do NOT use** the Fetch tool when you need to:
+
+- Extract specific information from a webpage (use specialized extraction tools)
+- Answer questions about web content (use agentic tools)
+- Analyze or summarize web pages (use agentic tools)
+
+## Limitations
+
+<Warning>
+  The Fetch tool has a maximum response size of 5MB. Attempting to fetch larger files will result in an error.
+</Warning>
+
+- Max response size: 5MB
+- Only supports HTTP and HTTPS protocols
+- Cannot handle authentication or cookies
+- Some websites may block automated requests
+- Returns raw content only - no analysis or extraction
+- No JavaScript execution (fetches static HTML only)
+
+## Tips
+
+- Use `text` format for plain text content or simple API responses
+- Use `markdown` format for content that should be rendered with formatting
+- Use `html` format when you need the raw HTML structure
+- Set appropriate timeouts for potentially slow websites
+- For authenticated APIs, ensure the endpoint doesn't require authentication or use appropriate headers
+
+## Common Use Cases
+
+### Fetching API Data
+
+```json
+{
+  "url": "https://api.github.com/repos/charmbracelet/crush",
+  "format": "text"
+}
+```
+
+Retrieves JSON data from a REST API.
+
+### Reading Documentation
+
+```json
+{
+  "url": "https://docs.example.com/getting-started",
+  "format": "markdown"
+}
+```
+
+Converts documentation HTML to readable Markdown.
+
+### Downloading Configuration Files
+
+```json
+{
+  "url": "https://example.com/config.json",
+  "format": "text",
+  "timeout": 30
+}
+```
+
+Downloads a configuration file with a 30-second timeout.
+
+## Error Handling
+
+Common errors and solutions:
+
+- **Invalid URL format** - Ensure URL starts with `http://` or `https://`
+- **Invalid format** - Use one of: `text`, `markdown`, `html`
+- **Timeout** - Increase the timeout value or check network connectivity
+- **403 Forbidden** - Site may be blocking automated requests
+- **Response too large** - File exceeds 5MB limit
+
+## See Also
+
+- [Bash Tool](/tools/bash) - Execute curl/wget commands for advanced use cases
+- [Grep Tool](/tools/grep) - Search fetched content
+- [Write Tool](/tools/write) - Save fetched content to files

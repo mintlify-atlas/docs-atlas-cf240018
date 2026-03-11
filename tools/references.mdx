@@ -1,0 +1,140 @@
+---
+title: References
+description: Find all references to a symbol using LSP
+---
+
+## Overview
+
+The References tool finds all usages of a symbol (function, variable, type, etc.) across your codebase using the Language Server Protocol (LSP). This provides semantic-aware search that's more accurate than text-based grep.
+
+<ParamField path="symbol" type="string" required>
+  The name of the symbol to find references for (e.g., "MyFunction", "myVariable", "MyType")
+</ParamField>
+
+<ParamField path="path" type="string">
+  Optional path to narrow the search to a specific directory or file. Defaults to the current directory.
+</ParamField>
+
+## Features
+
+- **Semantic search** - Finds actual code references, not just string matches
+- **Language-aware** - Works across multiple programming languages via LSP
+- **Precise results** - Excludes comments and unrelated strings
+- **Location details** - Returns file paths with exact line and column numbers
+- **Grouped output** - Results organized by file for easy navigation
+
+## Usage
+
+### Find All References to a Function
+
+```json
+{
+  "symbol": "HandleRequest"
+}
+```
+
+Finds all places where `HandleRequest` is called or referenced.
+
+### Find References in a Specific Directory
+
+```json
+{
+  "symbol": "UserConfig",
+  "path": "internal/config"
+}
+```
+
+Narrows the search to the `internal/config` directory.
+
+### Find References Using Qualified Names
+
+```json
+{
+  "symbol": "http.Server"
+}
+```
+
+For better precision, use fully-qualified names when applicable.
+
+## Output Format
+
+References are grouped by file with line and column information:
+
+```
+src/handler.go:
+  Line 15, Col 10: server := http.Server{Addr: ":8080"}
+  Line 42, Col 5: return &http.Server{Handler: mux}
+
+src/main.go:
+  Line 8, Col 12: srv := http.Server{}
+```
+
+## When to Use
+
+<Tip>
+  Use the References tool as your first choice when searching for where a symbol is used. It's more accurate than grep for finding actual code references.
+</Tip>
+
+Use the References tool when you need to:
+
+- Find all usages of a function or variable
+- Understand where a type is instantiated
+- Identify dependencies before refactoring
+- Track down all call sites for a method
+- Understand code flow and usage patterns
+
+**Do NOT use** grep or glob for symbol searches - use this tool instead.
+
+## Comparison with Other Tools
+
+| Tool | Best For | Limitations |
+|------|----------|-------------|
+| **References** | Finding symbol usages | Requires LSP server |
+| Grep | Text pattern search | Finds string matches, not semantic references |
+| Glob | File name search | Only finds files, not code references |
+
+## Limitations
+
+<Warning>
+  The References tool depends on active LSP servers. Make sure you have LSP configured for your language before using this tool.
+</Warning>
+
+- Results depend on LSP server capabilities and indexing
+- May not find references in files not indexed by LSP
+- Some LSP servers have better reference support than others
+- Requires the LSP server to have indexed the codebase
+
+## Tips
+
+- Use qualified names (e.g., `pkg.Func`, `Class.method`) for higher precision
+- Narrow scope with the path parameter for faster results
+- Ensure your LSP server is running and has indexed your project
+- For cross-language references, configure multiple LSP servers
+- Use this before refactoring to understand impact
+
+## Common Patterns
+
+### Refactoring Preparation
+
+Before renaming a function:
+
+1. Use References to find all call sites
+2. Review each usage for compatibility
+3. Use Edit or MultiEdit to update call sites
+4. Run Diagnostics to verify changes
+
+### Understanding Code Flow
+
+To understand how a function is used:
+
+1. Use References to find all call sites
+2. Use View to examine each caller
+3. Build a mental model of the flow
+4. Document findings or refactor as needed
+
+## See Also
+
+- [LSP Configuration](/configuration/lsp) - Configure LSP servers
+- [Diagnostics Tool](/tools/diagnostics) - Get code diagnostics
+- [Grep Tool](/tools/grep) - Text-based search
+- [Edit Tool](/tools/edit) - Make code changes

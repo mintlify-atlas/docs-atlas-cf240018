@@ -1,0 +1,91 @@
+---
+title: Diagnostics
+description: Get LSP diagnostics for files and projects
+---
+
+## Overview
+
+The Diagnostics tool retrieves code diagnostics (errors, warnings, and hints) from active Language Server Protocol (LSP) clients. This provides semantic code analysis that goes beyond simple syntax checking.
+
+<ParamField path="file_path" type="string">
+  The path to the file to get diagnostics for. Leave empty to get diagnostics for the entire project.
+</ParamField>
+
+## Features
+
+- **Multi-severity reporting** - Displays errors, warnings, and hints
+- **Grouped by severity** - Results organized by diagnostic severity level
+- **Detailed information** - Provides line numbers, columns, and diagnostic messages
+- **LSP-powered** - Leverages configured LSP servers for accurate analysis
+
+## Usage
+
+### Get Diagnostics for a Specific File
+
+```json
+{
+  "file_path": "src/main.go"
+}
+```
+
+Returns all LSP diagnostics for the specified file.
+
+### Get Project-Wide Diagnostics
+
+```json
+{
+  "file_path": ""
+}
+```
+
+Returns diagnostics for all files in the project.
+
+## Output Format
+
+Diagnostics are displayed in a structured format:
+
+```
+File: src/handler.go
+  ERROR (line 42, col 10): undefined: unknownVariable
+  WARNING (line 15, col 5): variable declared but not used: unusedVar
+  HINT (line 8, col 12): this value is never used
+
+File: src/utils.go
+  ERROR (line 23, col 18): cannot use type string as type int
+```
+
+## When to Use
+
+Use the Diagnostics tool when you need to:
+
+- Check for compilation or type errors before running code
+- Get a comprehensive list of issues in a file or project
+- Understand LSP-reported problems
+- Validate code changes before committing
+
+## Limitations
+
+<Warning>
+  Results are limited to diagnostics provided by active LSP clients. If no LSP server is configured for a language, this tool will return no diagnostics for those files.
+</Warning>
+
+- Depends on configured and running LSP servers
+- May not cover all possible code issues
+- Does not provide automatic fixes (use the Edit tool to apply fixes)
+
+## Tips
+
+<Tip>
+  Combine the Diagnostics tool with the Edit tool: first run Diagnostics to identify issues, then use Edit to fix them.
+</Tip>
+
+- Use with the References tool for comprehensive code analysis
+- Run after making significant code changes
+- Check project-wide diagnostics before commits
+- Use file-specific diagnostics for targeted debugging
+
+## See Also
+
+- [LSP Configuration](/configuration/lsp) - Configure LSP servers
+- [References Tool](/tools/references) - Find symbol references
+- [Edit Tool](/tools/edit) - Fix identified issues
