@@ -1,0 +1,119 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "Crush",
+  "projectDescription": "A terminal-based AI coding assistant that connects to LLMs and provides tools to read, write, and execute code",
+  "theme": "palm",
+  "primaryColor": "#fcfcf4",
+  "lightColor": null,
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/overview",
+              "configuration/providers",
+              "configuration/lsp",
+              "configuration/mcp",
+              "configuration/skills",
+              "configuration/permissions"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/sessions",
+              "guides/context-files",
+              "guides/initialization",
+              "guides/logging",
+              "guides/metrics"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/local-models",
+              "advanced/amazon-bedrock",
+              "advanced/vertex-ai",
+              "advanced/custom-providers",
+              "advanced/air-gapped"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "CLI Reference",
+        "groups": [
+          {
+            "group": "Commands",
+            "pages": [
+              "cli/crush",
+              "cli/run",
+              "cli/login",
+              "cli/models",
+              "cli/stats",
+              "cli/logs",
+              "cli/update-providers"
+            ]
+          },
+          {
+            "group": "Tools",
+            "pages": [
+              "tools/overview",
+              "tools/bash",
+              "tools/edit",
+              "tools/view",
+              "tools/grep",
+              "tools/glob",
+              "tools/ls",
+              "tools/write",
+              "tools/multiedit"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Multi-model LLM support (Anthropic, OpenAI, Gemini, Bedrock, and more)",
+    "Session-based conversations with context preservation",
+    "LSP integration for code intelligence",
+    "MCP server support (stdio, http, sse)",
+    "Agent Skills extensibility",
+    "Interactive TUI built with Bubble Tea",
+    "Built-in tools for code editing, viewing, searching, and execution",
+    "Flexible model switching mid-session",
+    "Cross-platform support (macOS, Linux, Windows, BSD)"
+  ],
+  "publicApiSurface": [
+    "crush",
+    "crush run",
+    "crush login",
+    "crush models",
+    "crush stats",
+    "crush logs",
+    "crush update-providers",
+    "bash tool",
+    "edit tool",
+    "view tool",
+    "grep tool",
+    "glob tool",
+    "ls tool",
+    "write tool",
+    "multiedit tool",
+    "fetch tool",
+    "references tool",
+    "diagnostics tool"
+  ]
+}
